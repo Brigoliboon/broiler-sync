@@ -1,14 +1,4 @@
--- Non-secret seed data only. No users, device keys, or credentials.
--- Age bands match firmware/control.cpp SP_TABLE (display-only in v1).
-
-insert into public.age_thresholds (from_day, to_day, setpoint_c) values
-  (0,  0,    30),
-  (1,  3,    28),
-  (4,  6,    27),
-  (7,  9,    26),
-  (10, 12,   25),
-  (13, 15,   24),
-  (16, 18,   23),
-  (19, 21,   22),
-  (22, 24,   21),
-  (25, null, 20);
+-- Local-only seed data (runs on `supabase db reset`, never on the hosted DB).
+-- Reference data the app needs lives in migrations instead
+-- (age setpoints: 20261117042500_seed_age_thresholds.sql).
+-- Never put users, device keys, or credentials here.
