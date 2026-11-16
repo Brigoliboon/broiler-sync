@@ -52,7 +52,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
 ### 6.2 Control (firmware)
 - FR-6: Fan (experimental compartment only, relay IN1 on D27) runs on temperature only, against an age-based setpoint with hysteresis so the relay doesn't chatter.
 - FR-7: Age-based temperature targets: day 0 30°C, days 1-3 28°C, 4-6 27°C, 7-9 26°C, 10-12 25°C, 13-15 24°C, 16-18 23°C, 19-21 22°C, 22-24 21°C, 25-60 20°C.
-- FR-8: Lamp (experimental compartment only, relay IN2 on D26) turns on below the setpoint and off above it, with a gap. Exact rule and AC vs 12V to be confirmed.
+- FR-8: Lamp (experimental compartment only, relay IN2 on D26) turns on when the experimental temperature is at least 1.0°C below the age-based setpoint, and turns off at or above the setpoint (defaults: `lampOnDelta` 1.0, `lampOffDelta` 0.0, overridable from cached server config). The fan and lamp are never on together: if the fan is on or wants on, the lamp is forced off.
 - FR-9: Manual and auto modes. A manual override runs for a set time, then auto resumes.
 - FR-10: Fail-safe behavior on sensor failure, power loss and Wi-Fi loss, with defaults that protect the birds. The fan must not push strong air at chick level during brooding.
 - FR-11: Relays are on the client's 4-channel 5V board, active LOW on hardware (set by `RELAY_ACTIVE_LOW`; the simulator uses active HIGH).
@@ -108,7 +108,6 @@ Keep the experimental compartment at the right temperature for the birds' age au
 ## 11. Open questions
 
 - Anemometer model.
-- Lamp rule and whether the lamp is AC or 12V.
 - Safe-state defaults (FR-10).
 - Final price and contract update.
 
@@ -117,4 +116,5 @@ Keep the experimental compartment at the right temperature for the birds' age au
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
+- FR-8 recorded from the v2 firmware: lamp on at 1.0°C below the setpoint, off at the setpoint, never on with the fan. Lamp rule and AC vs 12V dropped from open questions.
 - First draft from the client's scope doc (Nov 12) and the decisions in the project notes. Project named BroilerSync.
