@@ -13,6 +13,7 @@ ESP32 climate monitoring and automated ventilation for a two-compartment broiler
 - [Implementation plan](IMPLEMENTATION.md)
 - [Rules for contributors](AGENTS.md)
 - [CI/CD](docs/CI_CD.md)
+- [Design](docs/DESIGN.md)
 - Diagrams: `docs/images/`; parts list: `docs/item_lists.pdf`
 
 ## Build the firmware
