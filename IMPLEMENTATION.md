@@ -6,20 +6,20 @@ Deadline: **2026-11-29**.
 
 ## M1 (Nov 12-15): Scope and parts [done]
 - [x] Client scope doc reviewed, Blynk replaced by the website
-- [x] Parts list (`docs/poultry_bom_reference.pdf`) (C-3)
+- [x] Parts list (`docs/item_lists.pdf`) (C-3)
 - [x] Power design: 12V rail, battery switchover, buck to 5V, IP65 panel (C-3, NFR-5)
 - [x] Services breakdown for pricing (C-2)
 
 ## M2 (Nov 16-19): ESP32 firmware
 - [x] Both DHT22s and both anemometers read in the simulator (FR-1, FR-2)
 - [ ] Battery voltage on D35 (FR-3)
-- [ ] Sensor fault detection (FR-5)
-- [ ] Age-based fan setpoints with hysteresis (FR-6, FR-7)
-- [ ] Lamp rule (FR-8), after Boon confirms it
+- [x] Sensor fault detection (FR-5)
+- [x] Age-based fan setpoints with hysteresis (FR-6, FR-7)
+- [x] Lamp rule (FR-8)
 - [ ] Manual and auto modes with timed override (FR-9)
 - [ ] Fail-safe defaults for sensor, power and Wi-Fi loss (FR-10), after Boon confirms them
-- [ ] Settings cached in flash (FR-12)
-- [ ] SD logging every 1 minute with RTC time (FR-4, FR-13)
+- [x] Settings cached in flash (FR-12)
+- [x] SD logging every 1 minute with RTC time (FR-4, FR-13)
 - [ ] Bench test with real parts, `SIM_MODE 0`, active-LOW relays (FR-11)
 
 ## M3 (Nov 17-22): Database and website
@@ -56,7 +56,9 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
-- Project named BroilerSync; folder cleaned: firmware in `firmware/` (`firmware.ino`), single-file Wokwi sketch in `firmware/prototype/`, diagrams in `docs/images/`, parts list in `docs/`.
+- M2: fault detection, setpoints, lamp rule, flash settings and SD logging confirmed working in v2 (Boon); battery, modes, fail-safes and bench test still untested.
+- CI pipeline and PR template added (web lint/type-check/build, firmware compile).
+- Project named BroilerSync; folder cleaned: firmware in `firmware/` (`firmware.ino`), single-file Wokwi sketch in `firmware/prototype/`, diagrams in `docs/images/`, parts list in `docs/item_lists.pdf`.
 
 ### 2026-11-15
 - M1 closed (price still in negotiation, anemometer deferred, database design moved to M3).

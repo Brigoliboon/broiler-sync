@@ -1,0 +1,118 @@
+name: CI
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      firmware: ${{ steps.filter.outputs.firmware }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - "web/**"
+              - ".github/workflows/ci.yml"
+            firmware:
+              - "firmware/**"
+              - ".github/workflows/ci.yml"
+
+  web:
+    name: web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: Type-check
+        run: |
+          npx next typegen
+          npx tsc --noEmit
+      - run: npm run build
+
+  firmware:
+    name: firmware
+    needs: changes
+    if: needs.changes.outputs.firmware == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core and libraries
+        run: |
+          set -euo pipefail
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib install "Adafruit Unified Sensor@1.1.15"
+          arduino-cli lib install "DHT sensor library@1.4.7"
+          arduino-cli lib install "ArduinoJson@7.4.3"
+          arduino-cli lib install "Adafruit BusIO@1.17.4"
+          arduino-cli lib install "RTClib@2.1.4"
+      - name: Compile firmware
+        run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware
+      - name: Compile prototype
+        run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware/prototype
+
+  ci-ok:
+    name: ci-ok
+    needs: [changes, web, firmware]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required jobs
+        run: |
+          set -euo pipefail
+          changes="${{ needs.changes.result }}"
+          web="${{ needs.web.result }}"
+          firmware="${{ needs.firmware.result }}"
+          web_needed="${{ needs.changes.outputs.web }}"
+          firmware_needed="${{ needs.changes.outputs.firmware }}"
+
+          echo "changes=$changes web_needed=$web_needed web=$web firmware_needed=$firmware_needed firmware=$firmware"
+
+          if [ "$changes" != "success" ]; then
+            echo "changes job did not succeed"
+            exit 1
+          fi
+
+          fail=0
+          if [ "$web" = "failure" ] || [ "$web" = "cancelled" ] || { [ "$web_needed" = "true" ] && [ "$web" != "success" ]; }; then
+            echo "web was required=$web_needed result=$web"
+            fail=1
+          fi
+          if [ "$firmware" = "failure" ] || [ "$firmware" = "cancelled" ] || { [ "$firmware_needed" = "true" ] && [ "$firmware" != "success" ]; }; then
+            echo "firmware was required=$firmware_needed result=$firmware"
+            fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then
+            exit 1
+          fi
+          echo "All required jobs passed"
