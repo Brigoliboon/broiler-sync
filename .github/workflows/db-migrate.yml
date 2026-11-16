@@ -29,5 +29,5 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -euo pipefail
-          supabase link --project-ref djxhciqoieqryqchuxhn
-          supabase db push
+          supabase link --project-ref djxhciqoieqryqchuxhn --yes
+          supabase db push --remote --yes

@@ -12,7 +12,7 @@ GitHub Actions runs on pull requests and on pushes to `main`. A path filter skip
 
 ## Deploy: database migrations
 
-The `db-migrate` workflow runs `supabase db push` against the hosted project `djxhciqoieqryqchuxhn` when `supabase/migrations/**` is pushed to `main`, and can also be started by hand (`workflow_dispatch`). A concurrency group named `db-migrate` prevents overlapping pushes (`cancel-in-progress` is off, so a running apply is not cancelled).
+The `db-migrate` workflow runs `supabase db push --remote --yes` against the hosted project `djxhciqoieqryqchuxhn` when `supabase/migrations/**` is pushed to `main`, and can also be started by hand (`workflow_dispatch`). A concurrency group named `db-migrate` prevents overlapping pushes (`cancel-in-progress` is off, so a running apply is not cancelled).
 
 Required GitHub secrets (Settings → Secrets and variables → Actions):
 
