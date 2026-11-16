@@ -6,7 +6,7 @@ Deadline: **2026-11-29**.
 
 ## M1 (Nov 12-15): Scope and parts [done]
 - [x] Client scope doc reviewed, Blynk replaced by the website
-- [x] Parts list (`docs/poultry_bom_reference.pdf`) (C-3)
+- [x] Parts list (`docs/item_lists.pdf`) (C-3)
 - [x] Power design: 12V rail, battery switchover, buck to 5V, IP65 panel (C-3, NFR-5)
 - [x] Services breakdown for pricing (C-2)
 
@@ -56,7 +56,8 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
-- Project named BroilerSync; folder cleaned: firmware in `firmware/` (`firmware.ino`), single-file Wokwi sketch in `firmware/prototype/`, diagrams in `docs/images/`, parts list in `docs/`.
+- CI pipeline and PR template added (web lint/type-check/build, firmware compile).
+- Project named BroilerSync; folder cleaned: firmware in `firmware/` (`firmware.ino`), single-file Wokwi sketch in `firmware/prototype/`, diagrams in `docs/images/`, parts list in `docs/item_lists.pdf`.
 
 ### 2026-11-15
 - M1 closed (price still in negotiation, anemometer deferred, database design moved to M3).
