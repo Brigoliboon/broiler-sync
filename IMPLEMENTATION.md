@@ -25,7 +25,7 @@ Deadline: **2026-11-29**.
 ## M3 (Nov 17-22): Database and website
 - [ ] Repo setup: CI, PR template, branch protection on `main`, Vercel and Supabase connected
 - [x] `docs/DESIGN.md`: schema, device API, alert rules
-- [ ] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
+- [x] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
 - [ ] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
 - [ ] Firmware sync every 5 min plus immediate warnings (FR-14)
 - [ ] Admin: create and disable owners (FR-17)
@@ -56,6 +56,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
+- Added Supabase schema migrations with RLS, plus CI `supabase` check and `db-migrate` workflow.
 - Drafted `docs/DESIGN.md` (schema, device API, alert rules).
 - M2: fault detection, setpoints, lamp rule, flash settings and SD logging confirmed working in v2 (Boon); battery, modes, fail-safes and bench test still untested.
 - CI pipeline and PR template added (web lint/type-check/build, firmware compile).

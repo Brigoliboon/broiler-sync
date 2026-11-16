@@ -20,6 +20,7 @@ jobs:
     outputs:
       web: ${{ steps.filter.outputs.web }}
       firmware: ${{ steps.filter.outputs.firmware }}
+      supabase: ${{ steps.filter.outputs.supabase }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -31,6 +32,9 @@ jobs:
               - ".github/workflows/ci.yml"
             firmware:
               - "firmware/**"
+              - ".github/workflows/ci.yml"
+            supabase:
+              - "supabase/**"
               - ".github/workflows/ci.yml"
 
   web:
@@ -81,9 +85,26 @@ jobs:
       - name: Compile prototype
         run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware/prototype
 
+  supabase:
+    name: supabase
+    needs: changes
+    if: needs.changes.outputs.supabase == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local database and apply migrations
+        run: |
+          set -euo pipefail
+          supabase db start
+          supabase db reset
+          supabase db lint
+
   ci-ok:
     name: ci-ok
-    needs: [changes, web, firmware]
+    needs: [changes, web, firmware, supabase]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -93,10 +114,12 @@ jobs:
           changes="${{ needs.changes.result }}"
           web="${{ needs.web.result }}"
           firmware="${{ needs.firmware.result }}"
+          supabase="${{ needs.supabase.result }}"
           web_needed="${{ needs.changes.outputs.web }}"
           firmware_needed="${{ needs.changes.outputs.firmware }}"
+          supabase_needed="${{ needs.changes.outputs.supabase }}"
 
-          echo "changes=$changes web_needed=$web_needed web=$web firmware_needed=$firmware_needed firmware=$firmware"
+          echo "changes=$changes web_needed=$web_needed web=$web firmware_needed=$firmware_needed firmware=$firmware supabase_needed=$supabase_needed supabase=$supabase"
 
           if [ "$changes" != "success" ]; then
             echo "changes job did not succeed"
@@ -110,6 +133,10 @@ jobs:
           fi
           if [ "$firmware" = "failure" ] || [ "$firmware" = "cancelled" ] || { [ "$firmware_needed" = "true" ] && [ "$firmware" != "success" ]; }; then
             echo "firmware was required=$firmware_needed result=$firmware"
+            fail=1
+          fi
+          if [ "$supabase" = "failure" ] || [ "$supabase" = "cancelled" ] || { [ "$supabase_needed" = "true" ] && [ "$supabase" != "success" ]; }; then
+            echo "supabase was required=$supabase_needed result=$supabase"
             fail=1
           fi
           if [ "$fail" -ne 0 ]; then
