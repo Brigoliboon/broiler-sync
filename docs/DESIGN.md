@@ -1,6 +1,6 @@
 # BroilerSync: Design
 
-Schema, device API and alert rules for M3. Grounded in `REQUIREMENTS.md` (FR-13–FR-24, NFR-1–NFR-5, C-4, C-5) and in the v2 firmware (`firmware/cloud.cpp`, `config.h`, `storage.cpp`, `settings.cpp`, `control.cpp`). Where the firmware and the requirements disagree, the firmware contract wins for the device API, and the gap is listed under [Open questions](#12-open-questions).
+Schema, device API and alert rules for M3. Grounded in `REQUIREMENTS.md` (FR-13–FR-24, NFR-1–NFR-5, C-4, C-5) and in the v2 firmware (`firmware/cloud.cpp`, `config.h`, `storage.cpp`, `settings.cpp`, `control.cpp`). Where the firmware and the requirements disagree, the firmware contract wins for the device API. Accepted differences are recorded under [Decisions](#12-decisions); remaining gaps are under [Open questions](#13-open-questions).
 
 Times are Asia/Manila (UTC+8). Supabase project ref: `djxhciqoieqryqchuxhn`.
 
@@ -100,7 +100,7 @@ Indexes:
 
 - `(device_id, ts desc)` for dashboard and history.
 - Unique `(device_id, ts, uptime_s)` **where `ts is not null`**, for idempotent backfill (FR-15).
-- Null-`ts` rows are not uniquely constrained (see open questions).
+- Null-`ts` rows are not uniquely constrained. Rare duplicates are accepted rather than dropping data (see [Decisions](#12-decisions)).
 
 Ingest is an upsert on that unique key: a retried batch must not insert duplicates.
 
@@ -157,7 +157,7 @@ Display and documentation of the age → setpoint table (FR-7). The v2 firmware 
 | `to_day` | integer | 0, 3, 6, 9, 12, 15, 18, 21, 24, null (= 25 and after) |
 | `setpoint_c` | numeric not null | 30, 28, 27, 26, 25, 24, 23, 22, 21, 20 |
 
-FR-7 writes the last band as days 25–60; the firmware stays at 20°C after day 60 as well.
+This table is **display-only in v1**. The v2 firmware keeps using its hardcoded `SP_TABLE`. FR-7 writes the last band as days 25–60 at 20°C; v2 stays at 20°C after day 60 as well. That mismatch is accepted for v1.
 
 ### 2.9 `device_settings`
 
@@ -410,11 +410,11 @@ Humidity and wind bands match FR-23. Temperature "outside the setpoint band" in 
 
 ### 6.2 Server-originated: device offline (FR-23)
 
-The firmware cannot report that it is offline. A scheduled job (Vercel Cron, every 5 minutes) marks a device offline when `last_seen_at` is older than **12 minutes** (two missed 5-minute syncs plus slack). It inserts `alerts` with `source = server`, `event = start`, `code = DEVICE_OFFLINE`, `severity = warning`. When the device authenticates again, the API writes the matching `clear`.
+The firmware cannot report that it is offline. A scheduled job (Vercel Cron, every 5 minutes) marks a device offline when `last_seen_at` is older than **12 minutes** (two missed 5-minute syncs plus slack). That timeout is decided. It inserts `alerts` with `source = server`, `event = start`, `code = DEVICE_OFFLINE`, `severity = warning`. When the device authenticates again, the API writes the matching `clear`.
 
 ### 6.3 Power loss (FR-23, NFR-5)
 
-The firmware **does not** distinguish mains from battery. It only reports `BATT_LOW`, `BATT_CRIT` and `BATT_SENSOR`. Until a dedicated signal exists, treat those as the power-loss alerts and show them on the dashboard. Do not invent an `ON_BATTERY` event in the API.
+The firmware **does not** distinguish mains from battery, and v1 adds **no extra hardware sense line** from the adapter. Power-loss notification is the existing `BATT_LOW`, `BATT_CRIT` and `BATT_SENSOR` alerts, plus the server `DEVICE_OFFLINE` alert if the device stops checking in. Do not invent an `ON_BATTERY` event in the API.
 
 ### 6.4 Web push flow (C-5, FR-23)
 
@@ -443,7 +443,7 @@ Route: `GET /api/export.csv` (session auth, not the device key). Cap a single do
 
 ## 9. Retention
 
-Not specified in the requirements. v1 **keeps all rows**. There is no automatic delete. Revisit after handover (C-1 is 2026-11-29) once the group has exported what they need for the paper.
+v1 **keeps all rows**. There is no automatic delete. At one reading a minute that is about 525,000 rows a year, which is fine for this project. Revisit a delete-or-summarize policy after handover (C-1 is 2026-11-29), once the group has exported what they need for the paper.
 
 ## 10. Configuration and environment
 
@@ -471,18 +471,28 @@ Firmware (`config.h`, placeholders only in git): `WIFI_SSID`, `WIFI_PASS`, `API_
 - **FR-24 (optional):** the website writes `device_settings`; the device picks the changes up on the next config GET. The age → °C table itself is not configurable in v2 firmware.
 - Firmware `API_BASE` should be pointed at the Vercel deployment once the routes exist.
 
-## 12. Open questions
+## 12. Decisions
 
-1. **Offline timeout.** Proposed: 12 minutes after `last_seen_at`. Confirm, or pick another value.
-2. **Power-loss alert (FR-23, NFR-5).** Firmware cannot tell mains from battery; it only emits `BATT_LOW` / `BATT_CRIT` / `BATT_SENSOR`. Use those as the power-loss alerts unless a new hardware signal is added.
-3. **Null `ts` dedup.** Unique `(device_id, ts, uptime_s)` does not cover readings taken before the clock is set (`uptime_s` also resets on reboot). Accept possible duplicates for `ts is null`, or hash the payload? Propose: accept rare duplicates rather than drop data.
-4. **Setpoint table vs FR-7.** Website `age_thresholds` is display-only until the firmware can fetch it. Last band stays 20°C after day 60 in v2, not only days 25–60.
-5. **Retention after handover.** v1 keeps everything; agree a policy once the paper export is done.
-6. Still open in `REQUIREMENTS.md`: anemometer model, safe-state defaults (FR-10), final price.
+Decided 2026-11-17 (Asia/Manila):
+
+1. **Offline alert** fires 12 minutes after `last_seen_at`.
+2. **Power loss:** no extra mains-vs-battery sense line. Rely on `BATT_LOW` / `BATT_CRIT` / `BATT_SENSOR` plus the offline alert.
+3. **Null `ts` readings:** accept rare duplicates rather than drop data. Unique `(device_id, ts, uptime_s)` applies only where `ts is not null` (`uptime_s` also resets on reboot).
+4. **Age setpoint table** is display-only in v1. The v2 firmware hardcoded `SP_TABLE` stays in use. The FR-7 last band of days 25–60 at 20°C vs v2 holding 20°C after day 60 is accepted for v1.
+5. **Retention:** keep all rows for v1 (about 525,000 readings a year at one per minute). Revisit the policy after handover.
+
+## 13. Open questions
+
+Still open in `REQUIREMENTS.md`:
+
+- Anemometer model.
+- Safe-state defaults (FR-10).
+- Final price and contract update.
 
 ## Change log
 
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
+- Closed design questions: 12-minute offline alert, power-loss = low-battery + offline (no extra sense line), accept rare null-`ts` duplicates, display-only setpoint table for v1, keep all rows until after handover.
 - First draft: schema, device API matching v2 firmware, alert rules and web push, daily stats, CSV export.

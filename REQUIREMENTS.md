@@ -75,7 +75,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
   - humidity below 50% or above 70% (target 60-70% for days 0-3, 50-70% from day 4);
   - air speed at or above 0.15 m/s (days 0-14), 0.30 m/s (days 15-21), 0.50 m/s (days 22-28);
   - temperature outside the setpoint band;
-  - sensor fault, power loss (on battery) and device offline.
+  - sensor fault, low battery (`BATT_LOW`, `BATT_CRIT`, `BATT_SENSOR`) and device offline. There is no separate mains-vs-battery sense line; those alerts are the power-loss notification.
 - FR-24 (optional, "only if possible"): change setpoints, flock start date and mode from the website.
 
 ## 7. Non-functional requirements
@@ -84,7 +84,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
 - NFR-2: Control keeps running with no internet.
 - NFR-3: The dashboard works on a phone.
 - NFR-4: Row Level Security on every table; the service-role key never reaches the browser.
-- NFR-5: The system runs on the battery long enough to send a power-loss alert.
+- NFR-5: The system runs on the battery long enough to send a low-battery alert, or to be detected as offline (12 minutes after last contact).
 
 ## 8. Constraints
 
@@ -116,5 +116,6 @@ Keep the experimental compartment at the right temperature for the birds' age au
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
+- FR-23 / NFR-5: power-loss notification is low-battery alerts plus device offline (12 minutes after last contact). No extra mains sense line.
 - FR-8 recorded from the v2 firmware: lamp on at 1.0°C below the setpoint, off at the setpoint, never on with the fan. Lamp rule and AC vs 12V dropped from open questions.
 - First draft from the client's scope doc (Nov 12) and the decisions in the project notes. Project named BroilerSync.
