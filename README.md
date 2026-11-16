@@ -1,0 +1,18 @@
+# BroilerSync
+
+ESP32 climate monitoring and automated ventilation for a two-compartment broiler house, with a web dashboard, alerts and data export.
+
+## Parts of the system
+- `firmware/`: ESP32 sketch. Reads 2 DHT22s and 2 anemometers, runs the fan and lamp, logs to microSD and syncs to Supabase.
+- `firmware/prototype/`: single-file version for the Wokwi simulator.
+- `web/`: Next.js website (coming in M3).
+- `supabase/`: database migrations (coming in M3).
+
+## Docs
+- [Requirements](REQUIREMENTS.md)
+- [Implementation plan](IMPLEMENTATION.md)
+- [Rules for contributors](AGENTS.md)
+- Diagrams: `docs/images/`; parts list: `docs/poultry_bom_reference.pdf`
+
+## Build the firmware
+See `firmware/README.md` for libraries, pins and the `arduino-cli` compile command.

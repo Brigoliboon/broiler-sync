@@ -1,0 +1,63 @@
+# BroilerSync: Implementation
+
+Build order. Each item cites its requirement IDs from `REQUIREMENTS.md`. Tick items in the PR that completes them and add a progress log line.
+
+Deadline: **2026-11-29**.
+
+## M1 (Nov 12-15): Scope and parts [done]
+- [x] Client scope doc reviewed, Blynk replaced by the website
+- [x] Parts list (`docs/poultry_bom_reference.pdf`) (C-3)
+- [x] Power design: 12V rail, battery switchover, buck to 5V, IP65 panel (C-3, NFR-5)
+- [x] Services breakdown for pricing (C-2)
+
+## M2 (Nov 16-19): ESP32 firmware
+- [x] Both DHT22s and both anemometers read in the simulator (FR-1, FR-2)
+- [ ] Battery voltage on D35 (FR-3)
+- [ ] Sensor fault detection (FR-5)
+- [ ] Age-based fan setpoints with hysteresis (FR-6, FR-7)
+- [ ] Lamp rule (FR-8), after Boon confirms it
+- [ ] Manual and auto modes with timed override (FR-9)
+- [ ] Fail-safe defaults for sensor, power and Wi-Fi loss (FR-10), after Boon confirms them
+- [ ] Settings cached in flash (FR-12)
+- [ ] SD logging every 1 minute with RTC time (FR-4, FR-13)
+- [ ] Bench test with real parts, `SIM_MODE 0`, active-LOW relays (FR-11)
+
+## M3 (Nov 17-22): Database and website
+- [ ] Repo setup: CI, PR template, branch protection on `main`, Vercel and Supabase connected
+- [ ] `docs/DESIGN.md`: schema, device API, alert rules
+- [ ] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
+- [ ] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
+- [ ] Firmware sync every 5 min plus immediate warnings (FR-14)
+- [ ] Admin: create and disable owners (FR-17)
+- [ ] Dashboard for both compartments (FR-19)
+- [ ] History graphs (FR-20)
+- [ ] Daily min, max and average (FR-21)
+- [ ] CSV export (FR-22)
+- [ ] Web push alerts (FR-23)
+- [ ] Optional: setpoint and mode controls (FR-24)
+
+## M4 (Nov 22-23): Bench integration
+- [ ] Full loop test with simulated sensor faults, power loss and Wi-Fi loss (FR-5, FR-10, FR-15, NFR-1, NFR-2)
+- [ ] Final wiring and ESP32 pin diagrams in `docs/images/`
+
+## M5 (Nov 24-27): Power, enclosure, installation
+- [ ] 12V and battery switchover installed (NFR-5)
+- [ ] Enclosure, sensors at bird level in both compartments, fan in the experimental one
+- [ ] Installation photos
+
+## M6 (Nov 28-29): Field test and handover
+- [ ] Field test and demo
+- [ ] Operating and troubleshooting manual (`docs/USER_GUIDE.md`)
+- [ ] Sensor documentation for the appendices
+- [ ] Tag `v1.0`
+
+## Progress log
+
+Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-17
+- Project named BroilerSync; folder cleaned: firmware in `firmware/` (`firmware.ino`), single-file Wokwi sketch in `firmware/prototype/`, diagrams in `docs/images/`, parts list in `docs/`.
+
+### 2026-11-15
+- M1 closed (price still in negotiation, anemometer deferred, database design moved to M3).
+- v2 firmware runs in the simulator with both compartments' sensors and the fan and lamp relays.
