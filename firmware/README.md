@@ -17,10 +17,12 @@ Board: **ESP32 Dev Module** (`esp32:esp32:esp32`, core 3.3.x). The old POC is un
 | `storage.*` | SD CSV log, RAM fallback, "what is still unsent" pointers |
 | `cloud.*` | Wi-Fi, GET config, batched POST + backfill |
 | `clock_rtc.*` | DS3231, NTP fallback (UTC+8) |
+| `lcd_display.*` | 1602 I2C LCD (PCF8574 backpack), three rotating status pages |
 
 ## Libraries
 Adafruit **DHT sensor library** (+ Adafruit Unified Sensor), **ArduinoJson 7.x**, Adafruit **RTClib 2.x**
 (+ Adafruit BusIO). `WiFi`, `HTTPClient`, `SD`, `SPI`, `Wire`, `Preferences` come with the ESP32 core.
+The 1602 LCD is driven directly over `Wire` in `lcd_display.cpp`, so it needs no extra library.
 
 ```
 arduino-cli compile --fqbn esp32:esp32:esp32 firmware
@@ -39,6 +41,7 @@ arduino-cli compile --fqbn esp32:esp32:esp32 firmware
 | Relay board IN2 = **lamp** | D26 |
 | microSD (SPI) | MOSI D23, MISO D19, SCK D18, CS D5 |
 | DS3231 (I2C) | SDA D21, SCL D22 |
+| 1602 LCD I2C backpack | SDA D21, SCL D22 (shared with DS3231), VCC 5V, GND |
 
 * Only ADC1 pins (32-39) are used for analog, because ADC2 does not work while Wi-Fi is on.
 * The ESP32 pins are **3.3 V only**. Keep anemometer / voltage-sensor outputs below 3.1 V.
@@ -49,6 +52,19 @@ arduino-cli compile --fqbn esp32:esp32:esp32 firmware
   10 k pull-up from each relay IN to the board's VCC (active-low boards).
 * In Wokwi the DHT22 never changes by itself, so set `DHT_FROZEN_READS` to 100000 there, or it will
   (correctly) report FROZEN after ~2.5 min.
+
+## Local LCD (1602 I2C, RoHS)
+
+* Module: 1602 character LCD with a PCF8574 I2C backpack. Default address `0x27` (`0x3F` on some
+  backpacks); set `LCD_I2C_ADDR` in `config.h`.
+* Shares the DS3231 bus on D21/D22. Power VCC from the 5 V rail. If the backpack pulls SDA/SCL up to
+  5 V, use a level shifter: the ESP32 pins are 3.3 V only.
+* It rotates three pages every 4 s (`LCD_PAGE_MS`), refreshed once per second (`LCD_UPDATE_MS`):
+  1. Experimental and control readings: `E 27.5C 63% 0.08` / `C 27.1C 61% 0.12`.
+  2. `FAN ON  LAMP OFF` / `AUTO 12.6V OK` (mode, battery, alert level).
+  3. `AGE 5d SP 27.0C` / `SD OK WIFI OK`.
+* A missing LCD is probed again every 30 s (`LCD_RETRY_MS`). It never blocks control, SD logging or
+  cloud sync. Set `LCD_ENABLED 0` in `config.h` to compile it out.
 
 ## Control rules
 
@@ -203,4 +219,5 @@ level pick a hot-wire / low-speed sensor. Wind is smoothed (~2.5 s) before alert
 ## Not done / open points
 * Lamp rule, brooding-guard defaults and safe-state choices are assumptions (see above).
 * The default ESP32 partition leaves ~158 KB of flash free. OTA updates would need a bigger partition scheme.
+* The 1602 LCD pages and the PCF8574 timing are not bench-tested yet; confirm the address (`0x27`/`0x3F`) and the 5 V level on SDA/SCL.
 * Not tested on hardware or in Wokwi yet - compile-tested only.

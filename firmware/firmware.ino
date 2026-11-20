@@ -10,6 +10,7 @@
 //         storage     SD CSV log, RAM fallback, unsent-data pointers
 //         cloud       Wi-Fi, GET config, batched POST with backfill
 //         clock_rtc   DS3231 + NTP fallback
+//         lcd_display 1602 I2C status pages (shares the DS3231 bus)
 //
 //  Libraries: DHT sensor library + Adafruit Unified Sensor, ArduinoJson 7,
 //             RTClib (+ Adafruit BusIO). SD / SPI / Wire / WiFi are in the core.
@@ -25,6 +26,7 @@
 #include "control.h"
 #include "storage.h"
 #include "cloud.h"
+#include "lcd_display.h"
 
 static uint32_t lastLogMs = 0;
 static uint32_t lastSerialMs = 0;
@@ -90,6 +92,7 @@ void setup() {
   clockBegin();                   // RTC first so a resumed manual override can be checked
   settingsBegin();
   sensorsBegin();
+  lcdBegin();                     // after clockBegin: shares the DS3231 I2C bus
   storageBegin();
   cloudBegin();
 
@@ -107,6 +110,7 @@ void loop() {
   clockService();
   sensorsService();
   controlService();
+  lcdService();
 
   // Immediate log + upload when something important just happened.
   const char* why = controlTakeTrigger();
