@@ -28,7 +28,7 @@ Deadline: **2026-11-29**.
 - [x] `docs/DESIGN.md`: schema, device API, alert rules
 - [x] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
 - [x] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
-- [ ] Firmware sync every 5 min plus immediate warnings (FR-14)
+- [x] Firmware sync every 5 min plus immediate warnings (FR-14)
 - [ ] Admin: create and disable owners (FR-17)
 - [ ] Dashboard for both compartments (FR-19)
 - [ ] History graphs (FR-20)
@@ -56,6 +56,9 @@ Deadline: **2026-11-29**.
 ## Progress log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-21
+- M3: verified firmware-to-API sync (FR-14) against the deployed Vercel API using `test-farm`: config GET, readings POST and alerts POST all returned 200. Device key and API URL remain local-only and uncommitted.
 
 ### 2026-11-20
 - M3: added the device API (FR-14/15/16): per-device key auth, config GET, readings/alerts POST, duplicate-safe backfill RPCs and offline-clear on reconnect. Firmware-side 5-minute sync and the website remain pending.
