@@ -56,6 +56,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-17
+- Init schema applied to hosted Supabase via `db-migrate`; age setpoints moved from `seed.sql` into a migration so they reach the hosted DB; Supabase CLI pinned to 3.2.0 in CI.
 - Added Supabase schema migrations with RLS, plus CI `supabase` check and `db-migrate` workflow.
 - Drafted `docs/DESIGN.md` (schema, device API, alert rules).
 - M2: fault detection, setpoints, lamp rule, flash settings and SD logging confirmed working in v2 (Boon); battery, modes, fail-safes and bench test still untested.
