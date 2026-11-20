@@ -19,6 +19,7 @@
 #include <WiFi.h>
 #include <esp_task_wdt.h>
 #include <esp_system.h>
+#include <Wire.h>
 #include "config.h"
 #include "settings.h"
 #include "clock_rtc.h"
@@ -73,7 +74,30 @@ static void printStatusLine() {
   }
   if (ctl.safeMode) Serial.print(" SAFE");
   if (ctl.fanResting) Serial.print(" fan-rest");
-  Serial.printf(" sd=%d wifi=%d\n", storageSdOk(), cloudWifiUp());
+  Serial.printf(" sd=%d wifi=%d lcd=%d\n", storageSdOk(), cloudWifiUp(), lcdPresent());
+}
+
+// LCD diagnostics: list every I2C device so a wrong LCD_I2C_ADDR is obvious.
+static void i2cScan() {
+  Serial.printf("I2C scan (SDA=%d SCL=%d):\n", PIN_I2C_SDA, PIN_I2C_SCL);
+  bool lcdSeen = false;
+  int count = 0;
+  for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+    Wire.beginTransmission(addr);
+    if (Wire.endTransmission() != 0) continue;
+    count++;
+    if (addr == LCD_I2C_ADDR) lcdSeen = true;
+    Serial.printf("  found 0x%02X%s\n", addr,
+                  addr == LCD_I2C_ADDR ? "  <- LCD_I2C_ADDR" :
+                  addr == 0x68         ? "  (DS3231)" : "");
+  }
+  if (count == 0) Serial.println("  nothing found: check SDA/SCL, GND and power");
+  else if (!lcdSeen) Serial.printf("  nothing at 0x%02X: if 0x27/0x3F is listed above, set LCD_I2C_ADDR in config.h\n", LCD_I2C_ADDR);
+}
+
+static void printLcdState() {
+  if (lcdPresent()) Serial.printf("LCD state: OK (init done at 0x%02X). If the screen is still blank: contrast trimmer or 5 V supply\n", LCD_I2C_ADDR);
+  else Serial.printf("LCD state: NOT READY (no ACK at 0x%02X, retrying every %lu s)\n", LCD_I2C_ADDR, LCD_RETRY_MS / 1000);
 }
 
 void setup() {
@@ -92,7 +116,9 @@ void setup() {
   clockBegin();                   // RTC first so a resumed manual override can be checked
   settingsBegin();
   sensorsBegin();
+  i2cScan();                      // after clockBegin: the I2C bus is up
   lcdBegin();                     // after clockBegin: shares the DS3231 I2C bus
+  printLcdState();
   storageBegin();
   cloudBegin();
 
