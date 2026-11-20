@@ -27,7 +27,7 @@ Deadline: **2026-11-29**.
 - [ ] Repo setup: CI, PR template, branch protection on `main`, Vercel and Supabase connected
 - [x] `docs/DESIGN.md`: schema, device API, alert rules
 - [x] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
-- [ ] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
+- [x] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
 - [ ] Firmware sync every 5 min plus immediate warnings (FR-14)
 - [ ] Admin: create and disable owners (FR-17)
 - [ ] Dashboard for both compartments (FR-19)
@@ -58,6 +58,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-20
+- M3: added the device API (FR-14/15/16): per-device key auth, config GET, readings/alerts POST, duplicate-safe backfill RPCs and offline-clear on reconnect. Firmware-side 5-minute sync and the website remain pending.
 - M2: added the 1602 I2C LCD status display (FR-25): three rotating pages, missing-LCD retry, no extra library (uses `Wire`). Bench test with the real LCD still pending.
 
 ### 2026-11-17
