@@ -17,7 +17,7 @@
 //    The battery sensor is the same in both (0-25 V DC module or a
 //    30k/7.5k divider, 5:1). Do NOT use the 120/220VAC mains sensor.
 // ---------------------------------------------------------------------------
-#define SIM_MODE 1
+#define SIM_MODE 0
 
 // ---------------------------------------------------------------------------
 // 1. DEPLOYMENT CONFIG  (placeholders only - never commit real secrets)
