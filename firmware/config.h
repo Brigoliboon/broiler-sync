@@ -58,8 +58,22 @@
 #define PIN_SD_MISO    19
 #define PIN_SD_SCK     18
 #define PIN_SD_CS      5
-#define PIN_I2C_SDA    21    // DS3231
+#define PIN_I2C_SDA    21    // DS3231 + 1602 LCD backpack
 #define PIN_I2C_SCL    22
+
+// ---------------------------------------------------------------------------
+// 3b. LOCAL LCD (1602 character module with PCF8574 I2C backpack, RoHS)
+//     Shares the DS3231 I2C bus. Address is usually 0x27; some backpacks use 0x3F.
+//     Power the module from 5 V. If the backpack pulls SDA/SCL up to 5 V, use a
+//     level shifter (the ESP32 pins are 3.3 V only).
+// ---------------------------------------------------------------------------
+#define LCD_ENABLED        1
+#define LCD_I2C_ADDR       0x27
+#define LCD_COLS           16
+#define LCD_ROWS           2
+#define LCD_UPDATE_MS      1000UL   // refresh the current page once per second
+#define LCD_PAGE_MS        4000UL   // rotate pages every 4 s
+#define LCD_RETRY_MS       30000UL  // re-probe a missing LCD every 30 s
 
 // ---------------------------------------------------------------------------
 // 4. ANEMOMETER (model not chosen yet - edit these when it is)

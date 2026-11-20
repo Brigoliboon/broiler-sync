@@ -22,6 +22,8 @@ ESP32  --HTTPS-->  Next.js route handlers on Vercel  --service role-->  Supabase
 
 Firmware sync (FR-13, FR-14, FR-15): a reading is logged to microSD every 60 s; a POST runs every 5 minutes, or immediately on an alert, relay or mode trigger (which also resets the 5-minute countdown). Alert events are uploaded first, then readings, oldest first, 20 items per request. On Wi-Fi return, the same loop backfills anything still unsent.
 
+Local display (FR-25): a 1602 character LCD with a PCF8574 I2C backpack shares the DS3231 bus (D21/D22). It rotates three pages every 4 s: experimental/control readings, fan/lamp/mode/battery/alert, and age/setpoint/SD/Wi-Fi. The display is read-only and never participates in control. A missing LCD is retried every 30 s and does not block logging or sync.
+
 ## 2. Data model
 
 UUID primary keys unless noted. Timestamps are `timestamptz`. Firmware `ts` values are ISO-8601 with offset, e.g. `2026-11-12T11:48:00+08:00`; store them as-is. `ts` may be null when the RTC is unset and NTP has not run yet.
@@ -492,6 +494,9 @@ Still open in `REQUIREMENTS.md`:
 ## Change log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-20
+- Added the local 1602 I2C LCD (FR-25): shares the DS3231 bus, three rotating pages, no control path, missing-LCD retry.
 
 ### 2026-11-17
 - Closed design questions: 12-minute offline alert, power-loss = low-battery + offline (no extra sense line), accept rare null-`ts` duplicates, display-only setpoint table for v1, keep all rows until after handover.

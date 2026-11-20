@@ -4,7 +4,7 @@ Client project for a student thesis group: *IoT-Based Environmental Monitoring a
 
 ## 1. Overview
 
-BroilerSync monitors and controls the climate in a broiler house with two compartments, an **experimental** one and a **control** one. An ESP32 reads temperature, humidity and air speed in both, runs a 12V fan and a lamp in the experimental compartment, logs to a microSD card, and syncs to a Supabase database. A Next.js website shows live and historical data, sends web push alerts, and exports the data for the group's paper.
+BroilerSync monitors and controls the climate in a broiler house with two compartments, an **experimental** one and a **control** one. An ESP32 reads temperature, humidity and air speed in both, runs a 12V fan and a lamp in the experimental compartment, logs to a microSD card, and syncs to a Supabase database. A 1602 I2C LCD shows the current readings and relay state locally. A Next.js website shows live and historical data, sends web push alerts, and exports the data for the group's paper.
 
 **Users:** the thesis group (farm owners/operators of the setup) and Boon as admin.
 
@@ -28,6 +28,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
 
 **In scope**
 - ESP32 firmware (Arduino C++).
+- 1602 I2C LCD for local live readings and status.
 - Supabase database and device endpoints.
 - Next.js website: dashboard, history, alerts, export, admin.
 - 12V power with battery backup and automatic switchover; protective enclosure.
@@ -78,6 +79,9 @@ Keep the experimental compartment at the right temperature for the birds' age au
   - sensor fault, low battery (`BATT_LOW`, `BATT_CRIT`, `BATT_SENSOR`) and device offline. There is no separate mains-vs-battery sense line; those alerts are the power-loss notification.
 - FR-24 (optional, "only if possible"): change setpoints, flock start date and mode from the website.
 
+### 6.5 Local display (firmware)
+- FR-25: Show live status on a 1602 character LCD with an I2C backpack (RoHS-compliant). It shares the DS3231 I2C bus (D21/D22) and rotates three pages: compartment readings, fan/lamp/mode/battery/alert, and age/setpoint/SD/Wi-Fi. A missing LCD must not stop control, logging or sync.
+
 ## 7. Non-functional requirements
 
 - NFR-1: No data loss across power or Wi-Fi outages of at least 24 hours (SD buffer).
@@ -90,7 +94,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
 
 - C-1: Deadline 2026-11-29.
 - C-2: Fee ₱10,000 labor (price still under negotiation); the group pays for parts and hosting.
-- C-3: Hardware: ESP32 DevKit V1, 2 DHT22, 2 anemometers, Delta FFC1212DE 12V fan, 4-channel 5V relay board, microSD, DS3231, 12V supply, battery, switchover module, buck to 5V, IP65 enclosure.
+- C-3: Hardware: ESP32 DevKit V1, 2 DHT22, 2 anemometers, Delta FFC1212DE 12V fan, 4-channel 5V relay board, microSD, DS3231, 1602 I2C LCD (RoHS), 12V supply, battery, switchover module, buck to 5V, IP65 enclosure.
 - C-4: Stack: Arduino C++ firmware, Next.js on Vercel, Supabase.
 - C-5: Web push only for alerts.
 
@@ -114,6 +118,10 @@ Keep the experimental compartment at the right temperature for the birds' age au
 ## 12. Change log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-20
+- Added FR-25: 1602 I2C LCD (RoHS) for local live readings and status, sharing the DS3231 I2C bus. Missing LCD must not affect control, logging or sync.
+- Added the LCD to C-3 and the in-scope list.
 
 ### 2026-11-17
 - FR-23 / NFR-5: power-loss notification is low-battery alerts plus device offline (12 minutes after last contact). No extra mains sense line.

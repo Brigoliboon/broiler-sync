@@ -20,6 +20,7 @@ Deadline: **2026-11-29**.
 - [ ] Fail-safe defaults for sensor, power and Wi-Fi loss (FR-10), after Boon confirms them
 - [x] Settings cached in flash (FR-12)
 - [x] SD logging every 1 minute with RTC time (FR-4, FR-13)
+- [x] 1602 I2C LCD status display with rotating pages (FR-25)
 - [ ] Bench test with real parts, `SIM_MODE 0`, active-LOW relays (FR-11)
 
 ## M3 (Nov 17-22): Database and website
@@ -43,6 +44,7 @@ Deadline: **2026-11-29**.
 ## M5 (Nov 24-27): Power, enclosure, installation
 - [ ] 12V and battery switchover installed (NFR-5)
 - [ ] Enclosure, sensors at bird level in both compartments, fan in the experimental one
+- [ ] Mount the 1602 I2C LCD where it is readable from outside the enclosure (FR-25)
 - [ ] Installation photos
 
 ## M6 (Nov 28-29): Field test and handover
@@ -54,6 +56,9 @@ Deadline: **2026-11-29**.
 ## Progress log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-20
+- M2: added the 1602 I2C LCD status display (FR-25): three rotating pages, missing-LCD retry, no extra library (uses `Wire`). Bench test with the real LCD still pending.
 
 ### 2026-11-17
 - Added Supabase schema migrations with RLS, plus CI `supabase` check and `db-migrate` workflow.
