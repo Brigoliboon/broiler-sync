@@ -7,7 +7,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FW_VERSION "2.0.1"
+#define FW_VERSION "2.1.0"
 
 // ---------------------------------------------------------------------------
 // 0. SIMULATOR SWITCH
