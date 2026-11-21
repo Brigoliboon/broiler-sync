@@ -32,8 +32,8 @@ Deadline: **2026-11-29**.
 - [x] Admin: create and disable owners (FR-17)
 - [x] Dashboard for both compartments (FR-19)
 - [x] Clean Flat app UI: app shell, login, farm switcher and dashboard from the Figma frames (FR-18, FR-19)
-- [ ] History graphs (FR-20)
-- [ ] Daily min, max and average (FR-21)
+- [x] History graphs (FR-20)
+- [x] Daily min, max and average (FR-21)
 - [ ] CSV export (FR-22)
 - [ ] Web push alerts (FR-23)
 - [ ] Optional: setpoint and mode controls (FR-24)
@@ -66,6 +66,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M3 UI: History screen (FR-20, FR-21): 24 h / 7 days / custom range (up to 31 days), temperature, humidity and air speed charts for both compartments with the target band, and the daily min/avg/max table from the `daily_stats` view. Readings are paged on the server and averaged into 240 chart points.
 - M3 UI: Clean Flat tokens, app shell (248px sidebar from 1024px, phone bottom nav), login, farm switcher (only with more than one farm) and the phone/desktop dashboard from Pixel's Figma frames. Server-rendered, no client Supabase; keeps the full-height layout from #30.
 
 ### 2026-11-21
