@@ -1,6 +1,6 @@
 import { authenticateDevice, touchDevice } from "@/lib/device-auth";
 import { deviceConfigFromRow } from "@/lib/device-config";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(
   request: Request,

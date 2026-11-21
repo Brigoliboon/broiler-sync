@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   ChevronDownIcon,
@@ -13,7 +13,7 @@ import {
   RefreshIcon,
   ShieldIcon,
 } from "@/components/icons";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import { signOut } from "@/app/login/actions";
 
 type Props = {
   title: string;
@@ -95,18 +95,7 @@ function Nav({ pathname, role, onSignOut }: { pathname: string; role?: string; o
 
 export function AppShell({ title, subtitle, role, online, refreshing, onRefresh, actions, children }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [supabase] = useState<ReturnType<typeof supabaseBrowser> | null>(() => {
-    try { return supabaseBrowser(); } catch { return null; }
-  });
-
-  async function signOut() {
-    try { if (supabase) await supabase.auth.signOut(); } finally {
-      router.push("/login");
-      router.refresh();
-    }
-  }
 
   return (
     <div className="dark flex min-h-full w-full bg-[#060918] text-white">

@@ -1,5 +1,5 @@
 import { deviceKeyMatches } from "./device-key";
-import { supabaseAdmin } from "./supabase-admin";
+import { supabaseAdmin } from "./supabase/admin";
 
 export type DeviceAuth = {
   deviceId: string;

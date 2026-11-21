@@ -3,7 +3,7 @@ import {
   BatchValidationError,
   validateReadingBatch,
 } from "@/lib/device-validation";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const auth = await authenticateDevice(request);
