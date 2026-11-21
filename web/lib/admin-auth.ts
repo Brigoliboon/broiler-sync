@@ -63,3 +63,38 @@ export async function requireAdmin(
 
   return { adminId: profile.id };
 }
+
+
+export class AdminAuthError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "AdminAuthError";
+    this.status = status;
+  }
+}
+
+/** Cookie-session admin check for Server Actions. */
+export async function requireAdminSession(): Promise<AdminAuth> {
+  const userId = await userIdFromCookies();
+  if (!userId) throw new AdminAuthError("unauthorized", 401);
+
+  const { data, error } = await supabaseAdmin()
+    .from("profiles")
+    .select("id, role, disabled_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("admin auth lookup failed", error.message);
+    throw new AdminAuthError("database error", 500);
+  }
+
+  const profile = data as ProfileRow | null;
+  if (!profile || profile.role !== "admin" || profile.disabled_at !== null) {
+    throw new AdminAuthError("forbidden", 403);
+  }
+
+  return { adminId: profile.id };
+}
