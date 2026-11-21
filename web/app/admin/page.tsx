@@ -1,0 +1,521 @@
+"use client";
+
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+
+type Owner = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  role: string;
+  disabled_at: string | null;
+  farm_count: number;
+};
+
+type Device = {
+  device_id: string;
+  disabled_at: string | null;
+  last_seen_at: string | null;
+} | null;
+
+type Farm = {
+  id: string;
+  name: string;
+  owner_id: string;
+  owner_name: string | null;
+  created_at: string;
+  device: Device;
+};
+
+export default function AdminPage() {
+  const router = useRouter();
+  const [supabase] = useState<ReturnType<typeof supabaseBrowser> | null>(() => {
+    try {
+      return supabaseBrowser();
+    } catch {
+      return null;
+    }
+  });
+  const [configError] = useState<string | null>(() => {
+    try {
+      supabaseBrowser();
+      return null;
+    } catch (caught) {
+      return caught instanceof Error
+        ? caught.message
+        : "Browser Supabase configuration is missing";
+    }
+  });
+  const [token, setToken] = useState<string | null>(null);
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [farms, setFarms] = useState<Farm[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [deviceKey, setDeviceKey] = useState<string | null>(null);
+  const [deviceKeyOwner, setDeviceKeyOwner] = useState<string | null>(null);
+
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerFullName, setOwnerFullName] = useState("");
+  const [ownerPassword, setOwnerPassword] = useState("");
+
+  const [farmOwnerId, setFarmOwnerId] = useState("");
+  const [farmName, setFarmName] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+
+  const apiRequest = useCallback(
+    async <T,>(
+      path: string,
+      jwt: string,
+      options: RequestInit = {},
+    ): Promise<T> => {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          ...options.headers,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      const data = (await response.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : `HTTP ${response.status}`,
+        );
+      }
+      return data as T;
+    },
+    [],
+  );
+
+  const loadData = useCallback(
+    async (jwt: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [ownersData, farmsData] = await Promise.all([
+          apiRequest<{ owners: Owner[] }>("/api/admin/owners", jwt),
+          apiRequest<{ owners: Owner[]; farms: Farm[] }>(
+            "/api/admin/farms",
+            jwt,
+          ),
+        ]);
+        setOwners(ownersData.owners);
+        setFarms(farmsData.farms);
+        setFarmOwnerId((current) => {
+          if (current) return current;
+          return farmsData.owners.find((owner) => owner.role === "owner")?.id ?? "";
+        });
+      } catch (caught) {
+        setError(
+          caught instanceof Error ? caught.message : "Failed to load admin data",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiRequest],
+  );
+
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (!data.session) {
+          router.replace("/login");
+          return;
+        }
+        setToken(data.session.access_token);
+        void loadData(data.session.access_token);
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "Could not check sign-in session",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadData, router, supabase]);
+
+  const shownError = error ?? configError;
+
+  async function createOwner(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await apiRequest("/api/admin/owners", token, {
+        method: "POST",
+        body: JSON.stringify({
+          email: ownerEmail,
+          full_name: ownerFullName,
+          password: ownerPassword,
+        }),
+      });
+      setOwnerEmail("");
+      setOwnerFullName("");
+      setOwnerPassword("");
+      setNotice("Owner created");
+      await loadData(token);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to create owner");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setOwnerDisabled(owner: Owner, disabled: boolean) {
+    if (!token) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await apiRequest(`/api/admin/owners/${owner.id}`, token, {
+        method: "PATCH",
+        body: JSON.stringify({ disabled }),
+      });
+      setNotice(disabled ? "Owner disabled" : "Owner enabled");
+      await loadData(token);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to update owner");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createFarm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await apiRequest<{
+        farm: { id: string; name: string };
+        device_id: string;
+        device_key: string;
+      }>("/api/admin/farms", token, {
+        method: "POST",
+        body: JSON.stringify({
+          owner_id: farmOwnerId,
+          farm_name: farmName,
+          device_id: deviceId,
+        }),
+      });
+      setFarmName("");
+      setDeviceId("");
+      setDeviceKey(result.device_key);
+      setDeviceKeyOwner(`${result.farm.name} (${result.device_id})`);
+      setNotice("Farm and device created");
+      await loadData(token);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to create farm");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rotateKey(farm: Farm) {
+    if (!token || !farm.device) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await apiRequest<{ device_id: string; device_key: string }>(
+        `/api/admin/devices/${farm.device.device_id}/rotate`,
+        token,
+        { method: "POST" },
+      );
+      setDeviceKey(result.device_key);
+      setDeviceKeyOwner(`${farm.name} (${result.device_id})`);
+      setNotice("Device key rotated");
+      await loadData(token);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to rotate key");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function logout() {
+    try {
+      if (!supabase) throw new Error(configError ?? "Supabase is not configured");
+      await supabase.auth.signOut();
+    } catch {
+      setError("Sign-out failed");
+      return;
+    }
+    router.push("/login");
+  }
+
+  if (!token) {
+    return <main className="flex flex-1 items-center justify-center">Loading...</main>;
+  }
+
+  return (
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">BroilerSync admin</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            Owners, farms and device keys
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={logout}
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700"
+        >
+          Sign out
+        </button>
+      </header>
+
+      {shownError ? (
+        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950">
+          {shownError}
+        </p>
+      ) : null}
+      {notice ? (
+        <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950">
+          {notice}
+        </p>
+      ) : null}
+
+      {deviceKey ? (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            Device key for {deviceKeyOwner}. Copy it now — it will not be shown
+            again.
+          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <code className="flex-1 overflow-x-auto rounded-lg bg-white px-3 py-2 text-sm dark:bg-zinc-950">
+              {deviceKey}
+            </code>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard.writeText(deviceKey)}
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeviceKey(null)}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700"
+            >
+              Done
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <form
+          onSubmit={createOwner}
+          className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+        >
+          <h2 className="mb-4 text-lg font-semibold">Create owner</h2>
+          <label className="mb-3 block text-sm font-medium">
+            Full name
+            <input
+              value={ownerFullName}
+              onChange={(event) => setOwnerFullName(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="mb-3 block text-sm font-medium">
+            Email
+            <input
+              type="email"
+              value={ownerEmail}
+              onChange={(event) => setOwnerEmail(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="mb-4 block text-sm font-medium">
+            Password
+            <input
+              type="password"
+              value={ownerPassword}
+              onChange={(event) => setOwnerPassword(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={busy || loading}
+            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            Create owner
+          </button>
+        </form>
+
+        <form
+          onSubmit={createFarm}
+          className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+        >
+          <h2 className="mb-4 text-lg font-semibold">Create farm + device</h2>
+          <label className="mb-3 block text-sm font-medium">
+            Owner
+            <select
+              value={farmOwnerId}
+              onChange={(event) => setFarmOwnerId(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <option value="">Select owner</option>
+              {owners
+                .filter((owner) => owner.role === "owner" && owner.disabled_at === null)
+                .map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.full_name}
+                    {owner.email ? ` (${owner.email})` : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="mb-3 block text-sm font-medium">
+            Farm name
+            <input
+              value={farmName}
+              onChange={(event) => setFarmName(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="mb-4 block text-sm font-medium">
+            Device ID
+            <input
+              value={deviceId}
+              onChange={(event) => setDeviceId(event.target.value)}
+              required
+              placeholder="farm-01"
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={busy || loading || !farmOwnerId}
+            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            Create farm + device
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+        <h2 className="mb-4 text-lg font-semibold">Owners</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-zinc-500">
+              <tr>
+                <th className="px-2 py-2">Name</th>
+                <th className="px-2 py-2">Email</th>
+                <th className="px-2 py-2">Role</th>
+                <th className="px-2 py-2">Status</th>
+                <th className="px-2 py-2">Farms</th>
+                <th className="px-2 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {owners.map((owner) => (
+                <tr key={owner.id} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="px-2 py-2">{owner.full_name}</td>
+                  <td className="px-2 py-2">{owner.email ?? "—"}</td>
+                  <td className="px-2 py-2">{owner.role}</td>
+                  <td className="px-2 py-2">
+                    {owner.disabled_at ? "Disabled" : "Active"}
+                  </td>
+                  <td className="px-2 py-2">{owner.farm_count}</td>
+                  <td className="px-2 py-2 text-right">
+                    {owner.role === "owner" ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void setOwnerDisabled(owner, owner.disabled_at === null)
+                        }
+                        disabled={busy}
+                        className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
+                      >
+                        {owner.disabled_at ? "Enable" : "Disable"}
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+        <h2 className="mb-4 text-lg font-semibold">Farms and devices</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-zinc-500">
+              <tr>
+                <th className="px-2 py-2">Farm</th>
+                <th className="px-2 py-2">Owner</th>
+                <th className="px-2 py-2">Device ID</th>
+                <th className="px-2 py-2">Device status</th>
+                <th className="px-2 py-2">Last seen</th>
+                <th className="px-2 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {farms.map((farm) => (
+                <tr key={farm.id} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="px-2 py-2">{farm.name}</td>
+                  <td className="px-2 py-2">{farm.owner_name ?? "—"}</td>
+                  <td className="px-2 py-2">
+                    {farm.device?.device_id ?? "—"}
+                  </td>
+                  <td className="px-2 py-2">
+                    {farm.device
+                      ? farm.device.disabled_at
+                        ? "Disabled"
+                        : "Active"
+                      : "—"}
+                  </td>
+                  <td className="px-2 py-2">
+                    {farm.device?.last_seen_at ?? "—"}
+                  </td>
+                  <td className="px-2 py-2 text-right">
+                    {farm.device ? (
+                      <button
+                        type="button"
+                        onClick={() => void rotateKey(farm)}
+                        disabled={busy}
+                        className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
+                      >
+                        Rotate key
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  );
+}

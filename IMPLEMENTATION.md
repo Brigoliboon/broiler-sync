@@ -24,12 +24,12 @@ Deadline: **2026-11-29**.
 - [ ] Bench test with real parts, `SIM_MODE 0`, active-LOW relays (FR-11)
 
 ## M3 (Nov 17-22): Database and website
-- [ ] Repo setup: CI, PR template, branch protection on `main`, Vercel and Supabase connected
+- [x] Repo setup: CI, PR template, branch protection on `main`, Vercel and Supabase connected
 - [x] `docs/DESIGN.md`: schema, device API, alert rules
 - [x] Schema migrations: owners, farms, devices, compartments, readings, alerts, daily stats, age thresholds, with RLS (FR-17, FR-18, NFR-4)
 - [x] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
 - [x] Firmware sync every 5 min plus immediate warnings (FR-14)
-- [ ] Admin: create and disable owners (FR-17)
+- [x] Admin: create and disable owners (FR-17)
 - [ ] Dashboard for both compartments (FR-19)
 - [ ] History graphs (FR-20)
 - [ ] Daily min, max and average (FR-21)
@@ -58,6 +58,8 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3: verified repo setup (CI, PR template, branch protection on `main`, Vercel and Supabase connected).
+- M3: added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation. The admin API is guarded by an admin Supabase JWT and uses the service role only server-side.
 - M3: verified firmware-to-API sync (FR-14) against the deployed Vercel API using `test-farm`: config GET, readings POST and alerts POST all returned 200. Device key and API URL remain local-only and uncommitted.
 
 ### 2026-11-20

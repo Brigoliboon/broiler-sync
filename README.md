@@ -5,8 +5,8 @@ ESP32 climate monitoring and automated ventilation for a two-compartment broiler
 ## Parts of the system
 - `firmware/`: ESP32 sketch. Reads 2 DHT22s and 2 anemometers, runs the fan and lamp, shows status on a 1602 I2C LCD, logs to microSD and syncs to Supabase.
 - `firmware/prototype/`: single-file version for the Wokwi simulator.
-- `web/`: Next.js website (coming in M3).
-- `supabase/`: database migrations (coming in M3).
+- `web/`: Next.js app with the device API, login and admin provisioning.
+- `supabase/`: database migrations with RLS.
 
 ## Docs
 - [Requirements](REQUIREMENTS.md)
