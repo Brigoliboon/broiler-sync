@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { inputClass, primaryButtonClass } from "@/components/ui";
 import { signIn, type SignInState } from "./actions";
 
 const initialState: SignInState = { error: null };
@@ -9,45 +10,40 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(signIn, initialState);
 
   return (
-    <form
-      action={action}
-      className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-8"
-    >
-      <p className="text-lg font-semibold tracking-tight lg:hidden">
+    <form action={action} className="w-full max-w-sm">
+      <p className="text-sm font-semibold tracking-tight lg:hidden">
         BroilerSync
       </p>
-      <h2 className="mb-6 mt-4 text-2xl font-semibold tracking-tight lg:mt-0">
+      <h2 className="mt-4 text-2xl font-semibold tracking-tight lg:mt-0">
         Sign in
       </h2>
-      <label className="mb-4 block text-sm font-medium">
+      <label className="mt-8 block text-sm font-medium text-zinc-300">
         Email
         <input
           type="email"
           name="email"
           autoComplete="email"
           required
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className={inputClass}
         />
       </label>
-      <label className="mb-4 block text-sm font-medium">
+      <label className="mt-4 block text-sm font-medium text-zinc-300">
         Password
         <input
           type="password"
           name="password"
           autoComplete="current-password"
           required
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className={inputClass}
         />
       </label>
       {state.error ? (
-        <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
+        <p className="mt-4 text-sm text-red-400">{state.error}</p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+        className={`${primaryButtonClass} mt-6 w-full`}
       >
         {pending ? "Signing in..." : "Sign in"}
       </button>
