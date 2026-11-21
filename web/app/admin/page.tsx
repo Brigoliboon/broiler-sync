@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AppShell } from "@/components/app-shell";
+import { Card, EmptyState, StatusPill } from "@/components/ui";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type Owner = {
@@ -150,8 +152,6 @@ export default function AdminPage() {
     };
   }, [loadData, router, supabase]);
 
-  const shownError = error ?? configError;
-
   async function createOwner(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
@@ -252,270 +252,294 @@ export default function AdminPage() {
     }
   }
 
-  async function logout() {
-    try {
-      if (!supabase) throw new Error(configError ?? "Supabase is not configured");
-      await supabase.auth.signOut();
-    } catch {
-      setError("Sign-out failed");
-      return;
-    }
-    router.push("/login");
-  }
+  const shownError = error ?? configError;
 
   if (!token) {
-    return <main className="flex flex-1 items-center justify-center">Loading...</main>;
+    return <main className="flex min-h-full w-full items-center justify-center">Loading...</main>;
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">BroilerSync admin</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Owners, farms and device keys
-          </p>
-        </div>
+    <AppShell
+      title="Admin"
+      subtitle="Owners, farms and device keys"
+      role="admin"
+      actions={
         <button
           type="button"
-          onClick={logout}
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700"
+          onClick={() => void loadData(token)}
+          disabled={loading}
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
         >
-          Sign out
+          {loading ? "Refreshing..." : "Refresh"}
         </button>
-      </header>
-
+      }
+    >
       {shownError ? (
-        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950">
+        <p className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
           {shownError}
         </p>
       ) : null}
       {notice ? (
-        <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950">
+        <p className="w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
           {notice}
         </p>
       ) : null}
 
       {deviceKey ? (
-        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-            Device key for {deviceKeyOwner}. Copy it now — it will not be shown
-            again.
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <code className="flex-1 overflow-x-auto rounded-lg bg-white px-3 py-2 text-sm dark:bg-zinc-950">
-              {deviceKey}
-            </code>
-            <button
-              type="button"
-              onClick={() => void navigator.clipboard.writeText(deviceKey)}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-            >
-              Copy
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeviceKey(null)}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700"
-            >
-              Done
-            </button>
+        <section className="w-full rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Device key for {deviceKeyOwner}
+              </h2>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                Copy it now. It will not be shown again.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(deviceKey)}
+                className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeviceKey(null)}
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium dark:border-zinc-700"
+              >
+                Done
+              </button>
+            </div>
           </div>
+          <code className="mt-3 block w-full overflow-x-auto rounded-lg bg-white px-3 py-2 text-sm dark:bg-zinc-950">
+            {deviceKey}
+          </code>
         </section>
       ) : null}
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <form
-          onSubmit={createOwner}
-          className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
-        >
-          <h2 className="mb-4 text-lg font-semibold">Create owner</h2>
-          <label className="mb-3 block text-sm font-medium">
-            Full name
-            <input
-              value={ownerFullName}
-              onChange={(event) => setOwnerFullName(event.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <label className="mb-3 block text-sm font-medium">
-            Email
-            <input
-              type="email"
-              value={ownerEmail}
-              onChange={(event) => setOwnerEmail(event.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <label className="mb-4 block text-sm font-medium">
-            Password
-            <input
-              type="password"
-              value={ownerPassword}
-              onChange={(event) => setOwnerPassword(event.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={busy || loading}
-            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Create owner
-          </button>
-        </form>
-
-        <form
-          onSubmit={createFarm}
-          className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
-        >
-          <h2 className="mb-4 text-lg font-semibold">Create farm + device</h2>
-          <label className="mb-3 block text-sm font-medium">
-            Owner
-            <select
-              value={farmOwnerId}
-              onChange={(event) => setFarmOwnerId(event.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+      <div className="grid w-full gap-6 lg:grid-cols-2">
+        <Card title="Create owner" description="Add an owner account and login.">
+          <form onSubmit={createOwner} className="space-y-4">
+            <label className="block text-sm font-medium">
+              Full name
+              <input
+                value={ownerFullName}
+                onChange={(event) => setOwnerFullName(event.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Email
+              <input
+                type="email"
+                value={ownerEmail}
+                onChange={(event) => setOwnerEmail(event.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Password
+              <input
+                type="password"
+                value={ownerPassword}
+                onChange={(event) => setOwnerPassword(event.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={busy || loading}
+              className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
             >
-              <option value="">Select owner</option>
-              {owners
-                .filter((owner) => owner.role === "owner" && owner.disabled_at === null)
-                .map((owner) => (
-                  <option key={owner.id} value={owner.id}>
-                    {owner.full_name}
-                    {owner.email ? ` (${owner.email})` : ""}
-                  </option>
+              Create owner
+            </button>
+          </form>
+        </Card>
+
+        <Card
+          title="Create farm + device"
+          description="One ESP32 per farm; the key is shown once."
+        >
+          <form onSubmit={createFarm} className="space-y-4">
+            <label className="block text-sm font-medium">
+              Owner
+              <select
+                value={farmOwnerId}
+                onChange={(event) => setFarmOwnerId(event.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="">Select owner</option>
+                {owners
+                  .filter(
+                    (owner) =>
+                      owner.role === "owner" && owner.disabled_at === null,
+                  )
+                  .map((owner) => (
+                    <option key={owner.id} value={owner.id}>
+                      {owner.full_name}
+                      {owner.email ? ` (${owner.email})` : ""}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium">
+              Farm name
+              <input
+                value={farmName}
+                onChange={(event) => setFarmName(event.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Device ID
+              <input
+                value={deviceId}
+                onChange={(event) => setDeviceId(event.target.value)}
+                required
+                placeholder="farm-01"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={busy || loading || !farmOwnerId}
+              className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Create farm + device
+            </button>
+          </form>
+        </Card>
+      </div>
+
+      <Card title="Owners" description="Active owners can log in and view their farms.">
+        {owners.length === 0 ? (
+          <EmptyState>No owners yet.</EmptyState>
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Email</th>
+                  <th className="px-3 py-2">Role</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Farms</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {owners.map((owner) => (
+                  <tr
+                    key={owner.id}
+                    className="border-t border-zinc-200 dark:border-zinc-800"
+                  >
+                    <td className="px-3 py-2 font-medium">{owner.full_name}</td>
+                    <td className="px-3 py-2">{owner.email ?? "—"}</td>
+                    <td className="px-3 py-2 capitalize">{owner.role}</td>
+                    <td className="px-3 py-2">
+                      <StatusPill
+                        label={owner.disabled_at ? "Disabled" : "Active"}
+                        tone={owner.disabled_at ? "bad" : "good"}
+                      />
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">{owner.farm_count}</td>
+                    <td className="px-3 py-2 text-right">
+                      {owner.role === "owner" ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void setOwnerDisabled(owner, owner.disabled_at === null)
+                          }
+                          disabled={busy}
+                          className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
+                        >
+                          {owner.disabled_at ? "Enable" : "Disable"}
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
                 ))}
-            </select>
-          </label>
-          <label className="mb-3 block text-sm font-medium">
-            Farm name
-            <input
-              value={farmName}
-              onChange={(event) => setFarmName(event.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <label className="mb-4 block text-sm font-medium">
-            Device ID
-            <input
-              value={deviceId}
-              onChange={(event) => setDeviceId(event.target.value)}
-              required
-              placeholder="farm-01"
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={busy || loading || !farmOwnerId}
-            className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Create farm + device
-          </button>
-        </form>
-      </section>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-4 text-lg font-semibold">Owners</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-zinc-500">
-              <tr>
-                <th className="px-2 py-2">Name</th>
-                <th className="px-2 py-2">Email</th>
-                <th className="px-2 py-2">Role</th>
-                <th className="px-2 py-2">Status</th>
-                <th className="px-2 py-2">Farms</th>
-                <th className="px-2 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {owners.map((owner) => (
-                <tr key={owner.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                  <td className="px-2 py-2">{owner.full_name}</td>
-                  <td className="px-2 py-2">{owner.email ?? "—"}</td>
-                  <td className="px-2 py-2">{owner.role}</td>
-                  <td className="px-2 py-2">
-                    {owner.disabled_at ? "Disabled" : "Active"}
-                  </td>
-                  <td className="px-2 py-2">{owner.farm_count}</td>
-                  <td className="px-2 py-2 text-right">
-                    {owner.role === "owner" ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void setOwnerDisabled(owner, owner.disabled_at === null)
+      <Card title="Farms and devices" description="Device status and key rotation.">
+        {farms.length === 0 ? (
+          <EmptyState>No farms yet.</EmptyState>
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[880px] text-left text-sm">
+              <thead className="text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-3 py-2">Farm</th>
+                  <th className="px-3 py-2">Owner</th>
+                  <th className="px-3 py-2">Device ID</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Last seen</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {farms.map((farm) => (
+                  <tr
+                    key={farm.id}
+                    className="border-t border-zinc-200 dark:border-zinc-800"
+                  >
+                    <td className="px-3 py-2 font-medium">{farm.name}</td>
+                    <td className="px-3 py-2">{farm.owner_name ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {farm.device?.device_id ?? "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <StatusPill
+                        label={
+                          farm.device
+                            ? farm.device.disabled_at
+                              ? "Disabled"
+                              : "Active"
+                            : "No device"
                         }
-                        disabled={busy}
-                        className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
-                      >
-                        {owner.disabled_at ? "Enable" : "Disable"}
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-4 text-lg font-semibold">Farms and devices</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-zinc-500">
-              <tr>
-                <th className="px-2 py-2">Farm</th>
-                <th className="px-2 py-2">Owner</th>
-                <th className="px-2 py-2">Device ID</th>
-                <th className="px-2 py-2">Device status</th>
-                <th className="px-2 py-2">Last seen</th>
-                <th className="px-2 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {farms.map((farm) => (
-                <tr key={farm.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                  <td className="px-2 py-2">{farm.name}</td>
-                  <td className="px-2 py-2">{farm.owner_name ?? "—"}</td>
-                  <td className="px-2 py-2">
-                    {farm.device?.device_id ?? "—"}
-                  </td>
-                  <td className="px-2 py-2">
-                    {farm.device
-                      ? farm.device.disabled_at
-                        ? "Disabled"
-                        : "Active"
-                      : "—"}
-                  </td>
-                  <td className="px-2 py-2">
-                    {farm.device?.last_seen_at ?? "—"}
-                  </td>
-                  <td className="px-2 py-2 text-right">
-                    {farm.device ? (
-                      <button
-                        type="button"
-                        onClick={() => void rotateKey(farm)}
-                        disabled={busy}
-                        className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
-                      >
-                        Rotate key
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+                        tone={
+                          farm.device?.disabled_at
+                            ? "bad"
+                            : farm.device
+                              ? "good"
+                              : "neutral"
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      {farm.device?.last_seen_at ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {farm.device ? (
+                        <button
+                          type="button"
+                          onClick={() => void rotateKey(farm)}
+                          disabled={busy}
+                          className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium disabled:opacity-50 dark:border-zinc-700"
+                        >
+                          Rotate key
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </AppShell>
   );
 }
+

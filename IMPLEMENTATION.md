@@ -58,7 +58,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
-- M3: added the live dashboard (FR-19) at `/dashboard`: both compartments, relay states, mode, battery, age, setpoint, alerts, device online status, and 30 s refresh. Uses RLS and a `latest_readings` view.
+- M3: added the live dashboard (FR-19) for both compartments with fan/lamp, mode, battery, alert, online status and 30 s refresh, backed by a `latest_readings` view with RLS. The admin, dashboard, login and landing pages now share one dark UI shell. `firmware/config.h` stays local-only with placeholder keys.
 - M3: verified repo setup (CI, PR template, branch protection on `main`, Vercel and Supabase connected).
 - M3: added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation. The admin API is guarded by an admin Supabase JWT and uses the service role only server-side.
 - M3: verified firmware-to-API sync (FR-14) against the deployed Vercel API using `test-farm`: config GET, readings POST and alerts POST all returned 200. Device key and API URL remain local-only and uncommitted.
