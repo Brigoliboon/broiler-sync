@@ -41,7 +41,7 @@ Deadline: **2026-11-29**.
   - [x] Cookie auth with Server Actions and middleware (#18)
   - [x] Server-rendered dashboard (#16)
   - [x] Admin pages via Server Actions (#17)
-  - [ ] Keep Supabase out of the browser bundle (#19)
+  - [x] Keep Supabase out of the browser bundle (#19)
   - [x] Docs for the new data-access rules (#20)
 
 ## M4 (Nov 22-23): Bench integration
@@ -65,6 +65,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3: readings POST `400` at 16:36 was the firmware JSON-array bug already fixed in #14 (ArduinoJson cleared the batch buffer). Tests now pin the firmware serializer payload, including a faulted sensor and an unset RTC. `/api/readings` 400s include a short `error` reason and the firmware prints it on serial.
 - M3 rework: updated DESIGN.md, AGENTS.md and IMPLEMENTATION.md for server-only data access, cookie auth and the no-client-Supabase rule.
 - M3 rework: admin list data is loaded on the server; create/disable owners, create farm+device and rotate-key are Server Actions. The one-time device key is still shown only after create or rotate.
 - M3 rework: removed the browser Supabase client and added a lint/build check so client components and the production client bundle cannot talk to Supabase directly.
