@@ -30,7 +30,7 @@ Deadline: **2026-11-29**.
 - [x] Device endpoints: post readings, batch backfill, pull settings, per-device key (FR-14, FR-15, FR-16)
 - [x] Firmware sync every 5 min plus immediate warnings (FR-14)
 - [x] Admin: create and disable owners (FR-17)
-- [ ] Dashboard for both compartments (FR-19)
+- [x] Dashboard for both compartments (FR-19)
 - [ ] History graphs (FR-20)
 - [ ] Daily min, max and average (FR-21)
 - [ ] CSV export (FR-22)
@@ -58,6 +58,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3: added the live dashboard (FR-19) at `/dashboard`: both compartments, relay states, mode, battery, age, setpoint, alerts, device online status, and 30 s refresh. Uses RLS and a `latest_readings` view.
 - M3: verified repo setup (CI, PR template, branch protection on `main`, Vercel and Supabase connected).
 - M3: added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation. The admin API is guarded by an admin Supabase JWT and uses the service role only server-side.
 - M3: verified firmware-to-API sync (FR-14) against the deployed Vercel API using `test-farm`: config GET, readings POST and alerts POST all returned 200. Device key and API URL remain local-only and uncommitted.
