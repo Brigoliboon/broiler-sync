@@ -6,38 +6,51 @@ import {
   isDeviceOnline,
 } from "./dashboard-utils";
 
-const NOW = Date.parse("2026-11-21T12:00:00Z");
+const now = new Date("2026-11-21T12:00:00Z").getTime();
 
-describe("isDeviceOnline", () => {
-  it("treats recent contact as online", () => {
-    expect(
-      isDeviceOnline("2026-11-21T11:55:00Z", NOW),
-    ).toBe(true);
+describe("dashboard utilities", () => {
+  describe("isDeviceOnline", () => {
+    it("treats a recent check-in as online", () => {
+      expect(
+        isDeviceOnline(new Date(now - 5 * 60 * 1000).toISOString(), now),
+      ).toBe(true);
+    });
+
+    it("treats a check-in at or beyond the offline threshold as offline", () => {
+      expect(isDeviceOnline(new Date(now - DEVICE_OFFLINE_MS).toISOString(), now)).toBe(false);
+      expect(isDeviceOnline(new Date(now - DEVICE_OFFLINE_MS - 1).toISOString(), now)).toBe(false);
+    });
+
+    it("treats missing, invalid and future timestamps as offline", () => {
+      expect(isDeviceOnline(null, now)).toBe(false);
+      expect(isDeviceOnline("not-a-date", now)).toBe(false);
+      expect(isDeviceOnline(new Date(now + 60 * 1000).toISOString(), now)).toBe(false);
+    });
   });
 
-  it("treats old contact and null as offline", () => {
-    expect(isDeviceOnline("2026-11-21T11:40:00Z", NOW)).toBe(false);
-    expect(isDeviceOnline(null, NOW)).toBe(false);
+  describe("formatNumber", () => {
+    it("formats numbers with digits and a unit", () => {
+      expect(formatNumber(28.123, 1, "°C")).toBe("28.1°C");
+      expect(formatNumber(0.05, 2, " m/s")).toBe("0.05 m/s");
+    });
+
+    it("returns a dash for missing or invalid values", () => {
+      expect(formatNumber(null, 1)).toBe("—");
+      expect(formatNumber(undefined, 1)).toBe("—");
+      expect(formatNumber(Number.NaN, 1)).toBe("—");
+    });
   });
 
-  it("uses the 12 minute threshold", () => {
-    expect(isDeviceOnline(new Date(NOW - DEVICE_OFFLINE_MS + 1).toISOString(), NOW)).toBe(true);
-    expect(isDeviceOnline(new Date(NOW - DEVICE_OFFLINE_MS).toISOString(), NOW)).toBe(false);
-  });
-});
+  describe("formatTime", () => {
+    it("returns a dash for missing values and the raw value for invalid ones", () => {
+      expect(formatTime(null)).toBe("—");
+      expect(formatTime("bad")).toBe("bad");
+    });
 
-describe("formatNumber", () => {
-  it("formats finite values and hides missing ones", () => {
-    expect(formatNumber(26.14, 1, "°C")).toBe("26.1°C");
-    expect(formatNumber(12.4, 2, " V")).toBe("12.40 V");
-    expect(formatNumber(null, 1, "°C")).toBe("—");
-  });
-});
-
-describe("formatTime", () => {
-  it("formats a timestamp and hides missing ones", () => {
-    expect(formatTime(null)).toBe("—");
-    expect(formatTime("bad")).toBe("bad");
-    expect(formatTime("2026-11-21T04:00:00+08:00")).toContain("Nov 21, 2026");
+    it("formats an instant in Asia/Manila", () => {
+      const formatted = formatTime("2026-11-21T02:30:00Z");
+      expect(formatted).toContain("Nov 21, 2026");
+      expect(formatted).toContain("10:30");
+    });
   });
 });

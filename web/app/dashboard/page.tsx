@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { AppShell, FarmAvatar } from "@/components/app-shell";
+import { BatteryIcon, BellIcon, CalendarIcon, ClockIcon, DropletIcon, FanIcon, GearIcon, HourglassIcon, LampIcon, ThermometerIcon, WindIcon } from "@/components/icons";
+import { Card, EmptyState, Stat, StatusPill } from "@/components/ui";
 import { formatNumber, formatTime, isDeviceOnline } from "@/lib/dashboard-utils";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type ProfileRow = { role: string };
 
-type FarmRow = {
-  id: string;
-  name: string;
-};
+type FarmRow = { id: string; name: string };
 
 type DeviceRow = {
   device_id: string;
@@ -51,40 +50,9 @@ type DashboardItem = {
   reading: ReadingRow | null;
 };
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-      {detail ? <p className="mt-1 text-xs text-zinc-500">{detail}</p> : null}
-    </div>
-  );
-}
-
-function StatusPill({ label, ok }: { label: string; ok: boolean }) {
-  return (
-    <span
-      className={`rounded-full px-2 py-1 text-xs font-medium ${
-        ok
-          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
-
 function CompartmentCard({
   title,
+  icon,
   temp,
   humidity,
   wind,
@@ -92,6 +60,7 @@ function CompartmentCard({
   windStatus,
 }: {
   title: string;
+  icon: ReactNode;
   temp: number | null;
   humidity: number | null;
   wind: number | null;
@@ -99,42 +68,38 @@ function CompartmentCard({
   windStatus: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <StatusPill label={tempStatus ?? "unknown"} ok={tempStatus === "ok"} />
+    <Card
+      title={title}
+      actions={
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-violet-300">
+            {icon}
+          </span>
+          <StatusPill
+            label={tempStatus ?? "unknown"}
+            tone={tempStatus === "ok" ? "good" : "neutral"}
+            dot
+          />
+        </div>
+      }
+    >
+      <div className="grid w-full gap-2 sm:grid-cols-3">
+        <Stat label="Temp" value={formatNumber(temp, 1, "°C")} icon={<ThermometerIcon className="h-5 w-5" />} />
+        <Stat label="Humidity" value={formatNumber(humidity, 1, "%")} icon={<DropletIcon className="h-5 w-5" />} />
+        <Stat label="Wind" value={formatNumber(wind, 2, " m/s")} detail={windStatus ?? undefined} icon={<WindIcon className="h-5 w-5" />} />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <Metric label="Temp" value={formatNumber(temp, 1, "°C")} />
-        <Metric label="Humidity" value={formatNumber(humidity, 1, "%")} />
-        <Metric
-          label="Wind"
-          value={formatNumber(wind, 2, " m/s")}
-          detail={windStatus ?? undefined}
-        />
-      </div>
-    </div>
+    </Card>
   );
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const [supabase] = useState<ReturnType<typeof supabaseBrowser> | null>(() => {
-    try {
-      return supabaseBrowser();
-    } catch {
-      return null;
-    }
+    try { return supabaseBrowser(); } catch { return null; }
   });
   const [configError] = useState<string | null>(() => {
-    try {
-      supabaseBrowser();
-      return null;
-    } catch (caught) {
-      return caught instanceof Error
-        ? caught.message
-        : "Browser Supabase configuration is missing";
-    }
+    try { supabaseBrowser(); return null; }
+    catch (caught) { return caught instanceof Error ? caught.message : "Browser Supabase configuration is missing"; }
   });
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -149,55 +114,33 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [profileRes, farmsRes, devicesRes, readingsRes] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("role")
-              .eq("id", uid)
-              .maybeSingle(),
-            supabase.from("farms").select("id, name").order("name"),
-            supabase
-              .from("devices")
-              .select("device_id, farm_id, last_seen_at, disabled_at"),
-            supabase.from("latest_readings").select("*"),
-          ]);
-
-        const queryError =
-          profileRes.error ??
-          farmsRes.error ??
-          devicesRes.error ??
-          readingsRes.error;
+        const [profileRes, farmsRes, devicesRes, readingsRes] = await Promise.all([
+          supabase.from("profiles").select("role").eq("id", uid).maybeSingle(),
+          supabase.from("farms").select("id, name").order("name"),
+          supabase.from("devices").select("device_id, farm_id, last_seen_at, disabled_at"),
+          supabase.from("latest_readings").select("*"),
+        ]);
+        const queryError = profileRes.error ?? farmsRes.error ?? devicesRes.error ?? readingsRes.error;
         if (queryError) throw new Error(queryError.message);
 
         const profile = profileRes.data as ProfileRow | null;
         const farms = (farmsRes.data ?? []) as FarmRow[];
         const devices = (devicesRes.data ?? []) as DeviceRow[];
         const readings = (readingsRes.data ?? []) as ReadingRow[];
-        const deviceByFarm = new Map(
-          devices.map((device) => [device.farm_id, device]),
-        );
-        const readingByDevice = new Map(
-          readings.map((reading) => [reading.device_id, reading]),
-        );
+        const deviceByFarm = new Map(devices.map((device) => [device.farm_id, device]));
+        const readingByDevice = new Map(readings.map((reading) => [reading.device_id, reading]));
 
         setRole(profile?.role ?? "owner");
-        setItems(
-          farms.map((farm) => {
-            const device = deviceByFarm.get(farm.id) ?? null;
-            return {
-              farm,
-              device,
-              reading: device
-                ? (readingByDevice.get(device.device_id) ?? null)
-                : null,
-            };
-          }),
-        );
+        setItems(farms.map((farm) => {
+          const device = deviceByFarm.get(farm.id) ?? null;
+          return {
+            farm,
+            device,
+            reading: device ? (readingByDevice.get(device.device_id) ?? null) : null,
+          };
+        }));
       } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Failed to load dashboard",
-        );
+        setError(caught instanceof Error ? caught.message : "Failed to load dashboard");
       } finally {
         setLoading(false);
       }
@@ -208,144 +151,88 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!supabase) return;
     let cancelled = false;
-    void supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (cancelled) return;
-        if (!data.session) {
-          router.replace("/login");
-          return;
-        }
-        setToken(data.session.access_token);
-        setUserId(data.session.user.id);
-        void loadData(data.session.access_token, data.session.user.id);
-      })
-      .catch((caught) => {
-        if (!cancelled) {
-          setError(
-            caught instanceof Error
-              ? caught.message
-              : "Could not check sign-in session",
-          );
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (!data.session) { router.replace("/login"); return; }
+      setToken(data.session.access_token);
+      setUserId(data.session.user.id);
+      void loadData(data.session.access_token, data.session.user.id);
+    }).catch((caught) => {
+      if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not check sign-in session");
+    });
+    return () => { cancelled = true; };
   }, [loadData, router, supabase]);
 
   useEffect(() => {
     if (!token || !userId) return;
-    const interval = setInterval(() => {
-      void loadData(token, userId);
-    }, 30000);
+    const interval = setInterval(() => { void loadData(token, userId); }, 30000);
     return () => clearInterval(interval);
   }, [loadData, token, userId]);
 
-  async function logout() {
-    try {
-      if (!supabase) throw new Error(configError ?? "Supabase is not configured");
-      await supabase.auth.signOut();
-    } catch {
-      setError("Sign-out failed");
-      return;
-    }
-    router.push("/login");
-  }
-
   const shownError = error ?? configError;
+  const online = items.some((item) => isDeviceOnline(item.device?.last_seen_at ?? null));
 
   if (!token) {
-    return (
-      <main className="flex flex-1 items-center justify-center">Loading...</main>
-    );
+    return <main className="flex min-h-full w-full items-center justify-center bg-[#060918] text-white">Loading...</main>;
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">BroilerSync dashboard</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Live status for both compartments
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => void loadData(token, userId ?? "")}
-            disabled={loading}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
-          >
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
-          {role === "admin" ? (
-            <Link
-              href="/admin"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium dark:border-zinc-700"
-            >
-              Admin
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium dark:border-zinc-700"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
+    <AppShell
+      title="Dashboard"
+      subtitle="Live status for both compartments"
+      role={role}
+      online={online}
+      refreshing={loading}
+      onRefresh={() => void loadData(token, userId ?? "")}
+    >
       {shownError ? (
-        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950">
-          {shownError}
-        </p>
+        <p className="w-full rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{shownError}</p>
       ) : null}
 
-      {items.length === 0 && !loading ? (
-        <p className="rounded-2xl border border-zinc-200 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
-          No farms assigned to this account yet.
-        </p>
-      ) : null}
+      {items.length === 0 && !loading ? <EmptyState>No farms assigned to this account yet.</EmptyState> : null}
 
       {items.map(({ farm, device, reading }) => {
-        const online = isDeviceOnline(device?.last_seen_at ?? null);
-        const alertCodes = reading?.alert_codes ?? [];
+        const deviceOnline = isDeviceOnline(device?.last_seen_at ?? null);
         return (
           <section
             key={farm.id}
-            className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+            className="w-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 dark:shadow-none sm:p-5"
           >
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-lg font-semibold">{farm.name}</h2>
-                <p className="text-xs text-zinc-500">
-                  {device ? device.device_id : "No device"}
-                </p>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <FarmAvatar className="h-10 w-10 shrink-0 rounded-xl" />
+                <div>
+                  <h2 className="text-lg font-semibold">{farm.name}</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {device ? device.device_id : "No device"}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <StatusPill label={online ? "Online" : "Offline"} ok={online} />
+                <StatusPill
+                  label={deviceOnline ? "Online" : "Offline"}
+                  tone={deviceOnline ? "good" : "bad"}
+                  dot
+                />
                 <StatusPill
                   label={device?.disabled_at ? "Disabled" : "Active"}
-                  ok={!device?.disabled_at}
+                  tone={device?.disabled_at ? "bad" : "neutral"}
                 />
               </div>
             </div>
-
-            <p className="mb-4 text-xs text-zinc-500">
+            <p className="mb-4 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <ClockIcon className="h-4 w-4" />
               Last seen: {formatTime(device?.last_seen_at)}
             </p>
 
             {!reading ? (
-              <p className="rounded-xl bg-zinc-50 p-4 text-sm text-zinc-500 dark:bg-zinc-900">
-                No readings yet for this device.
-              </p>
+              <EmptyState>No readings yet for this device.</EmptyState>
             ) : (
-              <div className="space-y-4">
-                <div className="grid gap-4 lg:grid-cols-2">
+              <div className="w-full space-y-4">
+                <div className="grid w-full gap-4 lg:grid-cols-2">
                   <CompartmentCard
                     title="Experimental"
+                    icon={<GearIcon className="h-4 w-4" />}
                     temp={reading.e_temp}
                     humidity={reading.e_hum}
                     wind={reading.e_wind}
@@ -354,6 +241,7 @@ export default function DashboardPage() {
                   />
                   <CompartmentCard
                     title="Control"
+                    icon={<GearIcon className="h-4 w-4" />}
                     temp={reading.c_temp}
                     humidity={reading.c_hum}
                     wind={reading.c_wind}
@@ -361,36 +249,31 @@ export default function DashboardPage() {
                     windStatus={reading.c_wind_status}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <Metric label="Fan" value={reading.fan ? "ON" : "OFF"} />
-                  <Metric label="Lamp" value={reading.lamp ? "ON" : "OFF"} />
-                  <Metric label="Mode" value={reading.mode} />
-                  <Metric
-                    label="Battery"
-                    value={formatNumber(reading.batt_v, 2, " V")}
-                  />
-                  <Metric
-                    label="Setpoint"
-                    value={formatNumber(reading.setpoint, 1, "°C")}
-                  />
-                  <Metric label="Age" value={formatNumber(reading.age, 0, " d")} />
-                  <Metric
-                    label="Alert"
-                    value={reading.alert_level.toUpperCase()}
-                    detail={alertCodes.join(", ") || undefined}
-                  />
-                  <Metric
-                    label="Reading"
-                    value={formatTime(reading.ts)}
-                    detail={reading.reason ?? undefined}
-                  />
-                </div>
+                <Card
+                  title="Additional Info"
+                  actions={
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Latest snapshot
+                    </span>
+                  }
+                >
+                  <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+                    <Stat label="Fan" value={reading.fan ? "ON" : "OFF"} icon={<FanIcon className="h-5 w-5" />} />
+                    <Stat label="Lamp" value={reading.lamp ? "ON" : "OFF"} icon={<LampIcon className="h-5 w-5" />} />
+                    <Stat label="Mode" value={reading.mode} icon={<GearIcon className="h-5 w-5" />} />
+                    <Stat label="Battery" value={formatNumber(reading.batt_v, 2, " V")} icon={<BatteryIcon className="h-5 w-5" />} />
+                    <Stat label="Setpoint" value={formatNumber(reading.setpoint, 1, "°C")} icon={<ThermometerIcon className="h-5 w-5" />} />
+                    <Stat label="Age" value={formatNumber(reading.age, 0, " d")} icon={<HourglassIcon className="h-5 w-5" />} />
+                    <Stat label="Alert" value={reading.alert_level.toUpperCase()} detail={reading.alert_codes?.join(", ") || undefined} icon={<BellIcon className="h-5 w-5" />} />
+                    <Stat label="Reading" value={formatTime(reading.ts)} detail={reading.reason ?? undefined} icon={<CalendarIcon className="h-5 w-5" />} />
+                  </div>
+                </Card>
               </div>
             )}
           </section>
         );
       })}
-    </main>
+    </AppShell>
   );
 }
+
