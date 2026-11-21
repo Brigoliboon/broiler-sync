@@ -43,5 +43,7 @@ BroilerSync: ESP32 climate monitoring and fan/lamp control for a two-compartment
 
 ## Web rules
 - Database changes only through `supabase/migrations/`.
-- Only `NEXT_PUBLIC_*` values reach the browser; the service-role key never does.
+- Do not import `@supabase/supabase-js`, `@supabase/ssr`, or `web/lib/db/*` from client components. Query helpers and the admin/service-role client use `import "server-only"`. Sessions are cookies, created by Server Actions and refreshed in `web/proxy.ts`.
+- Prefer server-only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (`NEXT_PUBLIC_*` names still work as fallbacks). The service-role key (`SUPABASE_SECRET`) never reaches the browser or the firmware.
 - Device endpoints check the per-device key.
+- Do not add a browser Supabase client. `npm run lint` and `npm run build` in `web/` run `scripts/check-no-client-supabase.mjs` to keep supabase-js and `*.supabase.co` out of the client graph and the production client bundle.
