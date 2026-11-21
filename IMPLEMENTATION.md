@@ -39,7 +39,7 @@ Deadline: **2026-11-29**.
 - [ ] Server-side data access rework (#21)
   - [x] Typed server-only query helpers (#15)
   - [x] Cookie auth with Server Actions and middleware (#18)
-  - [ ] Server-rendered dashboard (#16)
+  - [x] Server-rendered dashboard (#16)
   - [ ] Admin pages via Server Actions (#17)
   - [ ] Keep Supabase out of the browser bundle (#19)
   - [ ] Docs for the new data-access rules (#20)
@@ -65,6 +65,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3 rework: the dashboard is a Server Component that loads farms, devices and latest readings through `getDashboardData()`. The 30 s refresh uses `router.refresh()` so the browser never queries Supabase.
 - M3 rework: cookie sessions via Next.js Proxy (`web/proxy.ts`, the Next.js 16 name for middleware), sign-in/sign-out Server Actions, and `requireAdmin` reading the cookie first. Dashboard table queries still use a cookie-backed browser client until #16.
 - M3 rework: added typed server-only query helpers (`web/lib/db/`) and a cookie-bound `@supabase/ssr` server client. The service-role client now lives in `web/lib/supabase/admin.ts` with `import "server-only"`. Website pages still use the browser client until the follow-up issues.
 - M3: added the live dashboard (FR-19) for both compartments with fan/lamp, mode, battery, alert, online status and 30 s refresh, backed by a `latest_readings` view with RLS. The admin, dashboard, login and landing pages now share one dark UI shell. `firmware/config.h` stays local-only with placeholder keys.
