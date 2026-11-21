@@ -30,11 +30,15 @@ export async function createUserClient() {
   });
 }
 
-/** Verified user id from the session cookie, or null if signed out. */
+/** Verified user id from the session cookie, or null if signed out / unconfigured. */
 export async function getAuthUserId(): Promise<string | null> {
-  const supabase = await createUserClient();
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims) return null;
-  const sub = data.claims.sub;
-  return typeof sub === "string" && sub.length > 0 ? sub : null;
+  try {
+    const supabase = await createUserClient();
+    const { data, error } = await supabase.auth.getClaims();
+    if (error || !data?.claims) return null;
+    const sub = data.claims.sub;
+    return typeof sub === "string" && sub.length > 0 ? sub : null;
+  } catch {
+    return null;
+  }
 }
