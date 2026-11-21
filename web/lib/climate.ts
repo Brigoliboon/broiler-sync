@@ -236,3 +236,13 @@ export function initials(name: string | null | undefined): string {
     .join("")
     .toUpperCase();
 }
+
+/** Age setpoint (FR-7 table, `age_thresholds`) for a flock day, or null. */
+export function setpointForAge(
+  thresholds: readonly { from_day: number; to_day: number | null; setpoint_c: number }[],
+  age: number | null | undefined,
+): number | null {
+  if (typeof age !== "number") return null;
+  const band = thresholds.find((t) => age >= t.from_day && (t.to_day === null || age <= t.to_day));
+  return band ? Number(band.setpoint_c) : null;
+}
