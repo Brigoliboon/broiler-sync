@@ -10,7 +10,7 @@ import { DashboardView } from "./dashboard-view";
 
 function Fallback() {
   return (
-    <main className="flex h-full min-h-dvh w-full items-center justify-center bg-[#060918] text-zinc-100">
+    <main className="flex min-h-full w-full items-center justify-center bg-[#060918] text-white">
       Loading...
     </main>
   );
