@@ -42,7 +42,7 @@ Deadline: **2026-11-29**.
   - [x] Server-rendered dashboard (#16)
   - [x] Admin pages via Server Actions (#17)
   - [ ] Keep Supabase out of the browser bundle (#19)
-  - [ ] Docs for the new data-access rules (#20)
+  - [x] Docs for the new data-access rules (#20)
 
 ## M4 (Nov 22-23): Bench integration
 - [ ] Full loop test with simulated sensor faults, power loss and Wi-Fi loss (FR-5, FR-10, FR-15, NFR-1, NFR-2)
@@ -65,6 +65,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3 rework: updated DESIGN.md, AGENTS.md and IMPLEMENTATION.md for server-only data access, cookie auth and the no-client-Supabase rule.
 - M3 rework: admin list data is loaded on the server; create/disable owners, create farm+device and rotate-key are Server Actions. The one-time device key is still shown only after create or rotate.
 - M3 rework: removed the browser Supabase client and added a lint/build check so client components and the production client bundle cannot talk to Supabase directly.
 - M3 rework: the dashboard is a Server Component that loads farms, devices and latest readings through `getDashboardData()`. The 30 s refresh uses `router.refresh()` so the browser never queries Supabase.
