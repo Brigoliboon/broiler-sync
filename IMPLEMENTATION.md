@@ -71,6 +71,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M3 UI: Admin · Owners restyled to frame 08 (FR-17, FR-18): owner cards on phones and a table (960px max) on desktop, with initials, Active/Disabled, farm and ESP32 counts, Disable/Enable and an Add owner form. Farm + ESP32 creation, the one-time key and key rotation are kept below in the same style. Uses the existing admin Server Actions; the old dark `app-shell`, `icons` and `ui` components are removed.
 - M3 UI: Farm settings screen (FR-24, read-only): flock start date with today's flock day, mode, and the day's target temperature (`age_thresholds`), humidity range and air speed limit (`device_settings`). The steppers, mode toggle and Save button are disabled until editing lands; FR-24 editing is pending for Boon.
 - M3 UI: Export screen and CSV download (FR-22): `GET /api/export` checks the cookie session and that the farm is visible under RLS, then streams an Excel-friendly CSV (UTF-8 BOM, CRLF, Manila timestamps) with the columns from the design, one row per reading per compartment, up to 92 days.
 - M3 UI: Alerts screen (FR-23): active and resolved incidents built from the start/clear log, a push opt-in switch (service worker `public/sw.js`, subscription saved by a Server Action under RLS), and web push from `/api/alerts` for fresh `start` events, run after the device gets its response. Push needs the VAPID env vars; the offline cron job is still open.
