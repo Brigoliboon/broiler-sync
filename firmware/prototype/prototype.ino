@@ -1768,7 +1768,13 @@ bool sendBatch(bool events, bool& more) {
     body = "[";
     for (int i = 0; i < n; i++) {
       if (i) body += ',';
-      if (events) body += lines[i]; else csvToJson(lines[i], body);
+      if (events) {
+        body += lines[i];
+      } else {
+        String item;
+        csvToJson(lines[i], item);   // serializeJson clears its String destination
+        body += item;
+      }
     }
     body += ']';
     String resp;
