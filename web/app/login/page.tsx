@@ -33,7 +33,7 @@ export default function LoginPage() {
     void supabase.auth
       .getSession()
       .then(({ data }) => {
-        if (data.session) router.replace("/admin");
+        if (data.session) router.replace("/dashboard");
       })
       .catch(() => setError("Could not check sign-in session"));
   }, [router, supabase]);
@@ -54,7 +54,7 @@ export default function LoginPage() {
         setError(authError.message);
         return;
       }
-      router.push("/admin");
+      router.push("/dashboard");
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Sign-in failed");
@@ -69,7 +69,7 @@ export default function LoginPage() {
         onSubmit={onSubmit}
         className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
       >
-        <h1 className="mb-6 text-xl font-semibold">BroilerSync admin sign-in</h1>
+        <h1 className="mb-6 text-xl font-semibold">BroilerSync sign-in</h1>
         <label className="mb-4 block text-sm font-medium">
           Email
           <input
