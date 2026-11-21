@@ -436,10 +436,6 @@ export function LandingPage() {
   return (
     <LandingMotion>
       <div className={`bsl ${inter.className}`}>
-        <div className="x-draft" role="note">
-          <Icon name="info" size={14} color="#92400E" />
-          Draft copy · all readings and names are sample data
-        </div>
         <Nav />
         <main>
           <Hero />
