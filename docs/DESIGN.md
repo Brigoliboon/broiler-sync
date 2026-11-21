@@ -466,7 +466,7 @@ Firmware (`config.h`, placeholders only in git): `WIFI_SSID`, `WIFI_PASS`, `API_
 
 ## 11. Website (implementation notes)
 
-- **Auth:** Supabase email login. Admin creates the owner user, inserts `profiles`, and can set `disabled_at` (FR-17).
+- **Auth:** Supabase email login. Admin creates the owner user, inserts `profiles`, and can set `disabled_at` (FR-17). Implemented at `/login` and `/admin`; admin API routes are guarded by an admin Supabase JWT and use the service role only server-side.
 - **Dashboard (FR-19, NFR-3):** latest snapshot per device, both compartments, fan/lamp, mode, battery, online (`now - last_seen_at` &lt; 12 minutes). Phone-first.
 - **History (FR-20):** `compartment_readings` charts, date range, Asia/Manila.
 - **Alerts:** open incidents plus a log of `start` / `clear` / `info`.
@@ -494,6 +494,9 @@ Still open in `REQUIREMENTS.md`:
 ## Change log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-21
+- Added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation.
 
 ### 2026-11-20
 - Added the local 1602 I2C LCD (FR-25): shares the DS3231 bus, three rotating pages, no control path, missing-LCD retry.
