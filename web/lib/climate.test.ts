@@ -6,6 +6,7 @@ import {
   formatSpan,
   humidityLimits,
   initials,
+  setpointForAge,
   sortBySeverity,
   windLimit,
 } from "./climate";
@@ -70,5 +71,21 @@ describe("formatting", () => {
     expect(initials("Juan Dela Cruz")).toBe("JD");
     expect(initials("Maria")).toBe("M");
     expect(initials("")).toBe("?");
+  });
+});
+
+describe("setpointForAge", () => {
+  const table = [
+    { from_day: 0, to_day: 0, setpoint_c: 30 },
+    { from_day: 1, to_day: 3, setpoint_c: 28 },
+    { from_day: 10, to_day: 12, setpoint_c: 25 },
+    { from_day: 25, to_day: null, setpoint_c: 20 },
+  ];
+  it("finds the band for a day", () => {
+    expect(setpointForAge(table, 0)).toBe(30);
+    expect(setpointForAge(table, 12)).toBe(25);
+    expect(setpointForAge(table, 60)).toBe(20);
+    expect(setpointForAge(table, 5)).toBeNull();
+    expect(setpointForAge(table, null)).toBeNull();
   });
 });

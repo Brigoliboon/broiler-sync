@@ -40,6 +40,8 @@ Deadline: **2026-11-29**.
   - [ ] VAPID keys set in Vercel (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
   - [ ] Scheduled `DEVICE_OFFLINE` job (Vercel Cron, 12 min) and its push
 - [ ] Optional: setpoint and mode controls (FR-24)
+  - [x] Farm settings screen, read-only: flock start date, mode and the day's setpoints (controls drawn but disabled)
+  - [ ] Editing from the website: pending, Boon to implement
 - [ ] Server-side data access rework (#21)
   - [x] Typed server-only query helpers (#15)
   - [x] Cookie auth with Server Actions and middleware (#18)
@@ -69,6 +71,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M3 UI: Farm settings screen (FR-24, read-only): flock start date with today's flock day, mode, and the day's target temperature (`age_thresholds`), humidity range and air speed limit (`device_settings`). The steppers, mode toggle and Save button are disabled until editing lands; FR-24 editing is pending for Boon.
 - M3 UI: Export screen and CSV download (FR-22): `GET /api/export` checks the cookie session and that the farm is visible under RLS, then streams an Excel-friendly CSV (UTF-8 BOM, CRLF, Manila timestamps) with the columns from the design, one row per reading per compartment, up to 92 days.
 - M3 UI: Alerts screen (FR-23): active and resolved incidents built from the start/clear log, a push opt-in switch (service worker `public/sw.js`, subscription saved by a Server Action under RLS), and web push from `/api/alerts` for fresh `start` events, run after the device gets its response. Push needs the VAPID env vars; the offline cron job is still open.
 - M3 UI: History screen (FR-20, FR-21): 24 h / 7 days / custom range (up to 31 days), temperature, humidity and air speed charts for both compartments with the target band, and the daily min/avg/max table from the `daily_stats` view. Readings are paged on the server and averaged into 240 chart points.

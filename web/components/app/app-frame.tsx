@@ -219,12 +219,25 @@ function BottomNav({ ctx, active }: { ctx: AppContext; active: NavKey }) {
  * App shell from the Figma frames: a 248px sidebar from 1024px up, a phone
  * bottom nav below that. Pages render their own headers inside.
  */
-export function AppFrame({ ctx, active, children }: { ctx: AppContext; active: NavKey; children: ReactNode }) {
+export function AppFrame({
+  ctx,
+  active,
+  phoneNav = true,
+  children,
+}: {
+  ctx: AppContext;
+  active: NavKey;
+  /** Sub-pages with a back button (Farm settings) hide the phone bottom nav, as in the frames. */
+  phoneNav?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-dvh w-full flex-1 bg-bg text-text">
       <Sidebar ctx={ctx} active={active} />
-      <div className="flex min-w-0 flex-1 flex-col pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-      <BottomNav ctx={ctx} active={active} />
+      <div className={cx("flex min-w-0 flex-1 flex-col lg:pb-0", phoneNav && "pb-[calc(72px+env(safe-area-inset-bottom))]")}>
+        {children}
+      </div>
+      {phoneNav ? <BottomNav ctx={ctx} active={active} /> : null}
     </div>
   );
 }
