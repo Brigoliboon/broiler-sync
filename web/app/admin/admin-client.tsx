@@ -1,37 +1,29 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Card, EmptyState, StatusPill } from "@/components/ui";
+import {
+  createFarmAction,
+  createOwnerAction,
+  rotateDeviceKeyAction,
+  setOwnerDisabledAction,
+} from "./actions";
+import type { AdminFarm, AdminOwner } from "@/lib/db/admin";
 
-type Owner = {
-  id: string;
-  full_name: string;
-  email: string | null;
-  role: string;
-  disabled_at: string | null;
-  farm_count: number;
-};
+type Owner = AdminOwner;
+type Farm = AdminFarm;
 
-type Device = {
-  device_id: string;
-  disabled_at: string | null;
-  last_seen_at: string | null;
-} | null;
-
-type Farm = {
-  id: string;
-  name: string;
-  owner_id: string;
-  owner_name: string | null;
-  created_at: string;
-  device: Device;
-};
-
-export function AdminClient() {
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState(true);
+export function AdminClient({
+  owners,
+  farms,
+}: {
+  owners: AdminOwner[];
+  farms: AdminFarm[];
+}) {
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,72 +34,11 @@ export function AdminClient() {
   const [ownerFullName, setOwnerFullName] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
 
-  const [farmOwnerId, setFarmOwnerId] = useState("");
+  const [farmOwnerId, setFarmOwnerId] = useState(
+    () => owners.find((owner) => owner.role === "owner")?.id ?? "",
+  );
   const [farmName, setFarmName] = useState("");
   const [deviceId, setDeviceId] = useState("");
-
-  const apiRequest = useCallback(
-    async <T,>(
-      path: string,
-      options: RequestInit = {},
-    ): Promise<T> => {
-      const response = await fetch(path, {
-        ...options,
-        credentials: "same-origin",
-        headers: {
-          ...options.headers,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = (await response.json().catch(() => ({}))) as Record<
-        string,
-        unknown
-      >;
-      if (!response.ok) {
-        throw new Error(
-          typeof data.error === "string" ? data.error : `HTTP ${response.status}`,
-        );
-      }
-      return data as T;
-    },
-    [],
-  );
-
-  const loadData = useCallback(
-    async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [ownersData, farmsData] = await Promise.all([
-          apiRequest<{ owners: Owner[] }>("/api/admin/owners"),
-          apiRequest<{ owners: Owner[]; farms: Farm[] }>("/api/admin/farms"),
-        ]);
-        setOwners(ownersData.owners);
-        setFarms(farmsData.farms);
-        setFarmOwnerId((current) => {
-          if (current) return current;
-          return farmsData.owners.find((owner) => owner.role === "owner")?.id ?? "";
-        });
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Failed to load admin data",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiRequest],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.resolve().then(() => {
-      if (!cancelled) void loadData();
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadData]);
 
   async function createOwner(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,19 +46,17 @@ export function AdminClient() {
     setError(null);
     setNotice(null);
     try {
-      await apiRequest("/api/admin/owners", {
-        method: "POST",
-        body: JSON.stringify({
-          email: ownerEmail,
-          full_name: ownerFullName,
-          password: ownerPassword,
-        }),
+      const result = await createOwnerAction({
+        email: ownerEmail,
+        full_name: ownerFullName,
+        password: ownerPassword,
       });
+      if (!result.ok) throw new Error(result.error);
       setOwnerEmail("");
       setOwnerFullName("");
       setOwnerPassword("");
       setNotice("Owner created");
-      await loadData();
+      startRefresh(() => router.refresh());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to create owner");
     } finally {
@@ -140,12 +69,10 @@ export function AdminClient() {
     setError(null);
     setNotice(null);
     try {
-      await apiRequest(`/api/admin/owners/${owner.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ disabled }),
-      });
+      const result = await setOwnerDisabledAction({ id: owner.id, disabled });
+      if (!result.ok) throw new Error(result.error);
       setNotice(disabled ? "Owner disabled" : "Owner enabled");
-      await loadData();
+      startRefresh(() => router.refresh());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to update owner");
     } finally {
@@ -159,24 +86,18 @@ export function AdminClient() {
     setError(null);
     setNotice(null);
     try {
-      const result = await apiRequest<{
-        farm: { id: string; name: string };
-        device_id: string;
-        device_key: string;
-      }>("/api/admin/farms", {
-        method: "POST",
-        body: JSON.stringify({
-          owner_id: farmOwnerId,
-          farm_name: farmName,
-          device_id: deviceId,
-        }),
+      const result = await createFarmAction({
+        owner_id: farmOwnerId || (owners.find((owner) => owner.role === "owner")?.id ?? ""),
+        farm_name: farmName,
+        device_id: deviceId,
       });
+      if (!result.ok) throw new Error(result.error);
       setFarmName("");
       setDeviceId("");
       setDeviceKey(result.device_key);
-      setDeviceKeyOwner(`${result.farm.name} (${result.device_id})`);
+      setDeviceKeyOwner(`${result.farm_name} (${result.device_id})`);
       setNotice("Farm and device created");
-      await loadData();
+      startRefresh(() => router.refresh());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to create farm");
     } finally {
@@ -190,14 +111,15 @@ export function AdminClient() {
     setError(null);
     setNotice(null);
     try {
-      const result = await apiRequest<{ device_id: string; device_key: string }>(
-        `/api/admin/devices/${farm.device.device_id}/rotate`,
-        { method: "POST" },
-      );
+      const result = await rotateDeviceKeyAction({
+        device_id: farm.device.device_id,
+        farm_name: farm.name,
+      });
+      if (!result.ok) throw new Error(result.error);
       setDeviceKey(result.device_key);
-      setDeviceKeyOwner(`${farm.name} (${result.device_id})`);
+      setDeviceKeyOwner(`${result.farm_name} (${result.device_id})`);
       setNotice("Device key rotated");
-      await loadData();
+      startRefresh(() => router.refresh());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to rotate key");
     } finally {
@@ -216,11 +138,11 @@ export function AdminClient() {
       actions={
         <button
           type="button"
-          onClick={() => void loadData()}
-          disabled={loading}
+          onClick={() => startRefresh(() => router.refresh())}
+          disabled={refreshing}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
         >
-          {loading ? "Refreshing..." : "Refresh"}
+          {refreshing ? "Refreshing..." : "Refresh"}
         </button>
       }
     >
@@ -303,7 +225,7 @@ export function AdminClient() {
             </label>
             <button
               type="submit"
-              disabled={busy || loading}
+              disabled={busy}
               className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
             >
               Create owner
@@ -359,7 +281,7 @@ export function AdminClient() {
             </label>
             <button
               type="submit"
-              disabled={busy || loading || !farmOwnerId}
+              disabled={busy || owners.length === 0}
               className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
             >
               Create farm + device

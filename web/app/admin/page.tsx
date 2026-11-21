@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { listAdminFarms, listAdminOwners } from "@/lib/db/admin";
 import { getProfile } from "@/lib/db/profiles";
 import { getAuthUserId } from "@/lib/supabase/server";
 import { AdminClient } from "./admin-client";
@@ -21,7 +22,12 @@ async function AdminBody() {
     redirect("/dashboard");
   }
 
-  return <AdminClient />;
+  const [owners, farmsData] = await Promise.all([
+    listAdminOwners(),
+    listAdminFarms(),
+  ]);
+
+  return <AdminClient owners={owners} farms={farmsData.farms} />;
 }
 
 export default function AdminPage() {
