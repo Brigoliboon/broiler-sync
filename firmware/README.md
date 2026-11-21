@@ -90,20 +90,24 @@ arduino-cli compile --fqbn esp32:esp32:esp32 firmware
   **critical** <= 11.0 V. Sensor failures, SD error, clock lost.
   Severity is `ok` / `warning` / `critical`. Conditions are debounced (raise after 0-120 s depending on the
   alert, clear after 120 s) so a value hovering on a threshold does not spam events.
-* **Modes.** `AUTO` = the rules above. `MANUAL` = server sends desired fan/lamp for `manual_minutes`
-  (default 30); then AUTO resumes. Manual bypasses the brooding guard and sensor rules (the expiry is the safety
-  net) but still honours the 30 s relay interval and "fan wins over lamp". The running manual session is cached
-  and resumes after a reboot if the clock is valid.
+* **Modes (FR-9).** `AUTO` = the rules above. `MANUAL` = server sends desired fan/lamp for `manual_minutes`
+  (default 30, 1-1440); then AUTO resumes on its own. Manual bypasses the sensor rules (the expiry is the safety
+  net) but still honours the 30 s relay interval and "fan wins over lamp", and while brooding the brooding guard
+  also limits a manual fan (`MANUAL_BROOD_GUARD`). The override ends early on `"mode":"auto"` or after
+  `MANUAL_OFFLINE_END_MIN` (15) minutes without Wi-Fi. The running session is cached in flash and resumes after a
+  reboot only if the clock is valid and it has not expired (`MANUAL_RESUME_AFTER_REBOOT`); otherwise AUTO.
 
-## Safe states (all easy to change)
+## Safe states (FR-10, all easy to change)
+
+All fail-safe defaults are in `config.h` section **7b**. They are **proposed and still need Boon's confirmation**.
 
 | situation | behaviour |
 |---|---|
-| Boot / reset / power loss | Relays OFF at boot, stay OFF until the first valid experimental temperature (or until that sensor is declared failed). RTC keeps the time, cached config is reloaded from flash. |
-| **Experimental DHT22 failed** (NaN, out of range -10..60 C / 0..100 %, frozen 30 reads, 3 failed cycles) in AUTO | **Fan low duty cycle: 2 min ON / 8 min OFF** (`SAFE_FAN_ON_S`, `SAFE_FAN_OFF_S`), **lamp OFF**, **CRITICAL** alert `E_TEMP_SENSOR`. Reasoning: some ventilation is safer than none; a lamp with no temperature feedback could overheat chicks. Not applied in MANUAL. |
+| Boot / reset / power loss | Relays OFF at boot, stay OFF until the first valid experimental temperature (or until that sensor is declared failed). RTC keeps the time, cached config and last known age are reloaded from flash, and a running manual override resumes if the clock is valid and it has not expired (`MANUAL_RESUME_AFTER_REBOOT`). |
+| **Experimental DHT22 failed** (NaN, out of range -10..60 C / 0..100 %, frozen 30 reads, 3 failed cycles) in AUTO | **Fan duty cycle**: while brooding **2 min ON / 8 min OFF** (`SAFE_FAN_ON_S`, `SAFE_FAN_OFF_S`); after brooding **10 min ON / 5 min OFF** (`SAFE_FAN_ON_S_GROWER`, `SAFE_FAN_OFF_S_GROWER`). **Lamp OFF** (`SAFE_LAMP_BROODING 0`; set 1 to run the lamp in the fan's OFF phase while brooding). **CRITICAL** alert `E_TEMP_SENSOR`. Reasoning: some ventilation is safer than none, grown birds need more; a lamp with no temperature feedback could overheat chicks. Not applied in MANUAL. |
 | Control DHT22 failed | `C_TEMP_SENSOR` **warning** only (nothing is controlled from it). |
 | Anemometer disconnected (< 0.1 V for the 0.4 V-offset type) or > 2.5 V | `E_WIND_SENSOR` / `C_WIND_SENSOR` warning, wind shown as null. |
-| Wi-Fi lost | Keeps running on cached config, keeps logging to SD, reconnects automatically; when back, uploads everything not yet sent (oldest first, batches of 20). |
+| Wi-Fi lost | Keeps running on cached config, keeps logging to SD, reconnects automatically; when back, uploads everything not yet sent (oldest first, batches of 20). A manual override ends after 15 min offline (`MANUAL_OFFLINE_END_MIN`) and AUTO resumes; it does not restart when Wi-Fi returns (needs a new `manual_id`). |
 | SD missing / write error | `SD_ERROR` warning; records and events go to a RAM ring buffer (60 records, 20 events) and are still uploaded; moved to SD when it comes back (re-mount every 30 s). A reboot loses the RAM buffer. |
 | RTC lost power | `RTC_LOST` warning; clock is set from NTP (pool.ntp.org, UTC+8) as soon as Wi-Fi is up and written to the DS3231. Until then records have `ts: null` (use `uptime_s` / server receive time). |
 | Firmware hang | Task watchdog (30 s) reboots; relays come up OFF. |

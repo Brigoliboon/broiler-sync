@@ -23,6 +23,9 @@ static uint32_t lastCfgOk = 0, lastCfgTry = 0;
 static bool cfgEver = false;
 
 bool cloudWifiUp() { return WiFi.status() == WL_CONNECTED; }
+// wifiWasUp is still true until cloudService() has recorded the drop, so a stale
+// wifiDownSince is never used.
+uint32_t cloudWifiDownMs() { return (cloudWifiUp() || wifiWasUp) ? 0 : millis() - wifiDownSince; }
 
 void cloudBegin() {
   WiFi.mode(WIFI_STA);
