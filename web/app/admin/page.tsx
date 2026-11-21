@@ -7,7 +7,7 @@ import { AdminClient } from "./admin-client";
 
 function Fallback() {
   return (
-    <main className="flex min-h-full w-full items-center justify-center bg-[#060918] text-white">
+    <main className="flex h-full min-h-dvh w-full items-center justify-center bg-[#060918] text-zinc-100">
       Loading...
     </main>
   );
