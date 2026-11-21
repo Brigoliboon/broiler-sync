@@ -1,8 +1,10 @@
+import { after } from "next/server";
 import { authenticateDevice, touchDevice } from "@/lib/device-auth";
 import {
   BatchValidationError,
   validateAlertBatch,
 } from "@/lib/device-validation";
+import { notifyAlertStarts } from "@/lib/push/notify";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
@@ -40,6 +42,10 @@ export async function POST(request: Request) {
     console.error("alerts ingest failed", error);
     return Response.json({ error: "database error" }, { status: 500 });
   }
+
+  // FR-23: web push for new `start` events, after the device gets its 200.
+  const valid = batch.valid;
+  after(() => notifyAlertStarts(auth.deviceId, valid));
 
   return Response.json({
     accepted: batch.valid.length,

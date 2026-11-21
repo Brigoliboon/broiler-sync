@@ -37,3 +37,39 @@ export async function listPushSubscriptions(
   return (throwIfError(result, "could not list push subscriptions") ??
     []) as PushSubscription[];
 }
+
+export type PushSubscriptionInput = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userAgent: string | null;
+};
+
+/** Save the signed-in owner's browser subscription (RLS: own rows, active owners). */
+export async function savePushSubscription(
+  ownerId: string,
+  input: PushSubscriptionInput,
+  client?: SupabaseClient,
+): Promise<void> {
+  const db = await userDb(client);
+  const result = await db.from("push_subscriptions").upsert(
+    {
+      owner_id: ownerId,
+      endpoint: input.endpoint,
+      p256dh: input.p256dh,
+      auth: input.auth,
+      user_agent: input.userAgent,
+    },
+    { onConflict: "endpoint" },
+  );
+  throwIfError(result, "could not save push subscription");
+}
+
+export async function deletePushSubscription(
+  endpoint: string,
+  client?: SupabaseClient,
+): Promise<void> {
+  const db = await userDb(client);
+  const result = await db.from("push_subscriptions").delete().eq("endpoint", endpoint);
+  throwIfError(result, "could not remove push subscription");
+}
