@@ -31,6 +31,7 @@ Deadline: **2026-11-29**.
 - [x] Firmware sync every 5 min plus immediate warnings (FR-14)
 - [x] Admin: create and disable owners (FR-17)
 - [x] Dashboard for both compartments (FR-19)
+- [x] Clean Flat app UI: app shell, login, farm switcher and dashboard from the Figma frames (FR-18, FR-19)
 - [ ] History graphs (FR-20)
 - [ ] Daily min, max and average (FR-21)
 - [ ] CSV export (FR-22)
@@ -63,6 +64,9 @@ Deadline: **2026-11-29**.
 ## Progress log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-22
+- M3 UI: Clean Flat tokens, app shell (248px sidebar from 1024px, phone bottom nav), login, farm switcher (only with more than one farm) and the phone/desktop dashboard from Pixel's Figma frames. Server-rendered, no client Supabase; keeps the full-height layout from #30.
 
 ### 2026-11-21
 - M3: readings POST `400` at 16:36 was the firmware JSON-array bug already fixed in #14 (ArduinoJson cleared the batch buffer). Tests now pin the firmware serializer payload, including a faulted sensor and an unset RTC. `/api/readings` 400s include a short `error` reason and the firmware prints it on serial.

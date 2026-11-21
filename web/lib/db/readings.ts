@@ -167,3 +167,16 @@ export async function listCompartmentReadings(
   return (throwIfError(result, "could not list compartment readings") ??
     []) as CompartmentReading[];
 }
+
+export async function getLatestReading(
+  deviceId: string,
+  client?: SupabaseClient,
+): Promise<Reading | null> {
+  const db = await userDb(client);
+  const result = await db
+    .from("latest_readings")
+    .select(READING_SELECT)
+    .eq("device_id", deviceId)
+    .maybeSingle();
+  return throwIfError(result, "could not load latest reading") as Reading | null;
+}

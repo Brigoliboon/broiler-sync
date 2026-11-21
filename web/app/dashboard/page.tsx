@@ -1,52 +1,86 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { isDeviceOnline } from "@/lib/dashboard-utils";
-import { getDashboardData } from "@/lib/db/dashboard";
+import { LayoutDashboard } from "lucide-react";
+import { AppFrame, DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { EmptyNote, ErrorNote } from "@/components/app/ui";
+import { DEFAULT_LIMITS } from "@/lib/climate";
+import { getAppContext } from "@/lib/db/app-context";
 import { DbError } from "@/lib/db/errors";
-import { getProfile } from "@/lib/db/profiles";
-import { getAuthUserId } from "@/lib/supabase/server";
-import { DashboardShell } from "./dashboard-shell";
-import { DashboardView } from "./dashboard-view";
+import { getLatestReading, listReadings, type Reading } from "@/lib/db/readings";
+import { AutoRefresh } from "./auto-refresh";
+import { DesktopDashboard, PhoneDashboard, StatusChips, UpdatedAgo, type DashboardModel } from "./dashboard-view";
 
 function Fallback() {
-  return (
-    <main className="flex min-h-full w-full items-center justify-center bg-[#060918] text-white">
-      Loading...
-    </main>
-  );
+  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
 }
 
 async function DashboardBody() {
-  const userId = await getAuthUserId();
-  if (!userId) redirect("/login");
-  const profile = await getProfile(userId);
-  if (profile?.disabled_at) redirect("/login");
+  const ctx = await getAppContext();
+  const now = ctx.now;
+  const device = ctx.current?.device ?? null;
 
+  let reading: Reading | null = null;
+  let history: Reading[] = [];
   let error: string | null = null;
-  let role = "owner";
-  let items: Awaited<ReturnType<typeof getDashboardData>>["items"] = [];
-
-  try {
-    const data = await getDashboardData();
-    role = data.role;
-    items = data.items;
-  } catch (caught) {
-    error =
-      caught instanceof DbError
-        ? caught.message
-        : caught instanceof Error
-          ? caught.message
-          : "Failed to load dashboard";
+  if (device) {
+    try {
+      [reading, history] = await Promise.all([
+        getLatestReading(device.device_id),
+        listReadings({ deviceId: device.device_id, from: new Date(now - 24 * 60 * 60 * 1000).toISOString() }),
+      ]);
+    } catch (caught) {
+      error = caught instanceof DbError || caught instanceof Error ? caught.message : "Failed to load dashboard";
+    }
   }
 
-  const online = items.some((item) =>
-    isDeviceOnline(item.device?.last_seen_at ?? null),
-  );
+  const s = ctx.settings;
+  const model: DashboardModel = {
+    online: ctx.current?.online ?? false,
+    lastSeenAt: device?.last_seen_at ?? null,
+    reading,
+    history,
+    openAlerts: ctx.openAlerts,
+    limits: s
+      ? {
+          hum_low: Number(s.hum_low),
+          hum_high: Number(s.hum_high),
+          hum_brood_low: Number(s.hum_brood_low),
+          hum_brood_days: Number(s.hum_brood_days),
+          wind_alert_ms: s.wind_alert_ms.map(Number),
+          wind_alert_until_days: s.wind_alert_until_days.map(Number),
+        }
+      : DEFAULT_LIMITS,
+    battWarnV: s ? Number(s.batt_warn_v) : undefined,
+    battCritV: s ? Number(s.batt_crit_v) : undefined,
+    now,
+  };
+
+  let content;
+  if (!ctx.current) content = <EmptyNote>No farms assigned to this account yet.</EmptyNote>;
+  else if (!device) content = <EmptyNote>This farm has no ESP32 yet. Ask your admin to add one.</EmptyNote>;
+  else if (error) content = <ErrorNote>{error}</ErrorNote>;
+  else if (!reading) content = <EmptyNote>No readings yet for this device.</EmptyNote>;
+  else
+    content = (
+      <>
+        <PhoneDashboard model={model} />
+        <DesktopDashboard model={model} />
+      </>
+    );
 
   return (
-    <DashboardShell role={role} online={online}>
-      <DashboardView items={items} error={error} />
-    </DashboardShell>
+    <AppFrame ctx={ctx} active="dashboard">
+      <AutoRefresh />
+      <PhoneBar ctx={ctx}>{device ? <StatusChips model={model} /> : null}</PhoneBar>
+      <DesktopTop icon={LayoutDashboard} title="Dashboard">
+        {device ? (
+          <>
+            <StatusChips model={model} desktop />
+            <UpdatedAgo model={model} />
+          </>
+        ) : null}
+      </DesktopTop>
+      <PageBody>{content}</PageBody>
+    </AppFrame>
   );
 }
 
