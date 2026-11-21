@@ -7,17 +7,19 @@ Times are Asia/Manila (UTC+8). Supabase project ref: `djxhciqoieqryqchuxhn`.
 ## 1. Architecture
 
 ```
-ESP32  --HTTPS-->  Next.js route handlers on Vercel  --service role-->  Supabase Postgres
-                         |                                              ^
-                         |                                              |
-                    browser (owner / admin)  --publishable key + RLS----+
-                         |
-                    web push (VAPID)
+ESP32  --HTTPS + device key-->  Next.js device API on Vercel  --service role-->  Supabase
+                                                                      ^
+browser  --cookie / RSC / Server Actions-->  Next.js App Router ------+
+                                             |  cookie-bound @supabase/ssr client (RLS)
+                                             |  service role (device API, admin provisioning only)
+                                             +
+                                        web push (VAPID)
 ```
 
 - The ESP32 never talks to Supabase directly. It calls the Next.js device API with a per-device key (FR-16).
-- Route handlers verify the key, then read and write with the **service role**. The service-role key never reaches the browser or the firmware (NFR-4).
-- The website uses the Supabase publishable key and the owner's or admin's session. Row Level Security is on every table.
+- Device route handlers verify the key, then read and write with the **service role**. The service-role key never reaches the browser or the firmware (NFR-4).
+- The website does not call Supabase from the browser. Login, the dashboard and admin pages are Server Components and Server Actions. User data is loaded with a cookie-bound `@supabase/ssr` server client so Row Level Security applies under the signed-in session. Admin provisioning and the device API use the service-role client, which is guarded with `import "server-only"`.
+- The dashboard still refreshes every 30 s, but through `router.refresh()` (same-origin), so DevTools does not show Supabase requests.
 - One owner can have several farms; one ESP32 per farm (FR-18). Boon is the admin (FR-17).
 
 Firmware sync (FR-13, FR-14, FR-15): a reading is logged to microSD every 60 s; a POST runs every 5 minutes, or immediately on an alert, relay or mode trigger (which also resets the 5-minute countdown). Alert events are uploaded first, then readings, oldest first, 20 items per request. On Wi-Fi return, the same loop backfills anything still unsent.
@@ -451,12 +453,12 @@ v1 **keeps all rows**. There is no automatic delete. At one reading a minute tha
 
 ## 10. Configuration and environment
 
-Set these in Vercel (Production and Preview) and in local `web/.env.local` (gitignored). Never commit real values. Never put the service-role or VAPID private key in `NEXT_PUBLIC_*`.
+Set these in Vercel (Production and Preview) and in local `web/.env.local` (gitignored). Never commit real values. Prefer the server-only `SUPABASE_*` names for the project URL and publishable key so they are not inlined into the browser bundle; the `NEXT_PUBLIC_SUPABASE_*` names still work as fallbacks. Never put the service-role or VAPID private key in `NEXT_PUBLIC_*`.
 
 | name | where | purpose |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | browser + server | project URL, `https://djxhciqoieqryqchuxhn.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server | Supabase publishable key |
+| `SUPABASE_URL` | **server only** | project URL, `https://djxhciqoieqryqchuxhn.supabase.co`. `NEXT_PUBLIC_SUPABASE_URL` is still accepted as a fallback |
+| `SUPABASE_PUBLISHABLE_KEY` | **server only** | Supabase publishable key used by the cookie server client. `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is still accepted as a fallback |
 | `SUPABASE_SECRET` | **server only** | service-role key (device routes, cron, admin provisioning) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | browser | web push subscribe |
 | `VAPID_PRIVATE_KEY` | **server only** | web push send |
@@ -468,8 +470,8 @@ Firmware (`config.h`, placeholders only in git): `WIFI_SSID`, `WIFI_PASS`, `API_
 
 ## 11. Website (implementation notes)
 
-- **Auth:** Supabase email login. Admin creates the owner user, inserts `profiles`, and can set `disabled_at` (FR-17). Implemented at `/login` and `/admin`; admin API routes are guarded by an admin Supabase JWT and use the service role only server-side.
-- **Dashboard (FR-19, NFR-3):** implemented at `/dashboard`: latest snapshot per device, both compartments, fan/lamp, mode, battery, online (`now - last_seen_at` &lt; 12 minutes). Phone-first, 30 s refresh.
+- **Auth:** Supabase email/password login through a Server Action (`signIn` / `signOut`). The session is stored in cookies and refreshed by Next.js Proxy (`web/proxy.ts`, the Next.js 16 name for middleware). Admin creates the owner user, inserts `profiles`, and can set `disabled_at` (FR-17). `/login` and `/admin` are server-rendered; admin mutations are Server Actions (cookie session required). Leftover `/api/admin/*` routes still accept a Bearer token as a fallback and use the service role only server-side.
+- **Dashboard (FR-19, NFR-3):** implemented at `/dashboard` as a Server Component that loads data through `getDashboardData()`: latest snapshot per device, both compartments, fan/lamp, mode, battery, online (`now - last_seen_at` &lt; 12 minutes). Phone-first, 30 s refresh via `router.refresh()` (no browser Supabase client).
 - **History (FR-20):** `compartment_readings` charts, date range, Asia/Manila.
 - **Alerts:** open incidents plus a log of `start` / `clear` / `info`.
 - **FR-24 (optional):** the website writes `device_settings`; the device picks the changes up on the next config GET. The age → °C table itself is not configurable in v2 firmware.
@@ -498,6 +500,7 @@ Still open in `REQUIREMENTS.md`:
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- Reworked website data access so the browser no longer talks to Supabase: typed server-only helpers, cookie auth with Proxy, a server-rendered dashboard, admin Server Actions, and a lint/build check that keeps supabase-js out of the client bundle.
 - Added the live dashboard (FR-19): latest snapshot per farm/device, both compartments, relay states, battery, online status and a `latest_readings` view.
 - Added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation.
 
