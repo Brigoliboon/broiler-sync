@@ -36,6 +36,13 @@ Deadline: **2026-11-29**.
 - [ ] CSV export (FR-22)
 - [ ] Web push alerts (FR-23)
 - [ ] Optional: setpoint and mode controls (FR-24)
+- [ ] Server-side data access rework (#21)
+  - [x] Typed server-only query helpers (#15)
+  - [ ] Cookie auth with Server Actions and middleware (#18)
+  - [ ] Server-rendered dashboard (#16)
+  - [ ] Admin pages via Server Actions (#17)
+  - [ ] Keep Supabase out of the browser bundle (#19)
+  - [ ] Docs for the new data-access rules (#20)
 
 ## M4 (Nov 22-23): Bench integration
 - [ ] Full loop test with simulated sensor faults, power loss and Wi-Fi loss (FR-5, FR-10, FR-15, NFR-1, NFR-2)
@@ -58,6 +65,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
+- M3 rework: added typed server-only query helpers (`web/lib/db/`) and a cookie-bound `@supabase/ssr` server client. The service-role client now lives in `web/lib/supabase/admin.ts` with `import "server-only"`. Website pages still use the browser client until the follow-up issues.
 - M3: added the live dashboard (FR-19) for both compartments with fan/lamp, mode, battery, alert, online status and 30 s refresh, backed by a `latest_readings` view with RLS. The admin, dashboard, login and landing pages now share one dark UI shell. `firmware/config.h` stays local-only with placeholder keys.
 - M3: verified repo setup (CI, PR template, branch protection on `main`, Vercel and Supabase connected).
 - M3: added admin provisioning (FR-17/FR-18): login, owner create/disable, farm + device creation with a one-time device key, and device-key rotation. The admin API is guarded by an admin Supabase JWT and uses the service role only server-side.

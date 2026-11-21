@@ -3,7 +3,7 @@ import {
   AdminValidationError,
   validateDisabledInput,
 } from "@/lib/admin-validation";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type ProfileRow = {
   id: string;
