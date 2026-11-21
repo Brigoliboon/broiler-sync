@@ -36,6 +36,9 @@ Deadline: **2026-11-29**.
 - [x] Daily min, max and average (FR-21)
 - [ ] CSV export (FR-22)
 - [ ] Web push alerts (FR-23)
+  - [x] Alerts screen, push opt-in and a push on each new device alert `start`
+  - [ ] VAPID keys set in Vercel (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
+  - [ ] Scheduled `DEVICE_OFFLINE` job (Vercel Cron, 12 min) and its push
 - [ ] Optional: setpoint and mode controls (FR-24)
 - [ ] Server-side data access rework (#21)
   - [x] Typed server-only query helpers (#15)
@@ -66,6 +69,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M3 UI: Alerts screen (FR-23): active and resolved incidents built from the start/clear log, a push opt-in switch (service worker `public/sw.js`, subscription saved by a Server Action under RLS), and web push from `/api/alerts` for fresh `start` events, run after the device gets its response. Push needs the VAPID env vars; the offline cron job is still open.
 - M3 UI: History screen (FR-20, FR-21): 24 h / 7 days / custom range (up to 31 days), temperature, humidity and air speed charts for both compartments with the target band, and the daily min/avg/max table from the `daily_stats` view. Readings are paged on the server and averaged into 240 chart points.
 - M3 UI: Clean Flat tokens, app shell (248px sidebar from 1024px, phone bottom nav), login, farm switcher (only with more than one farm) and the phone/desktop dashboard from Pixel's Figma frames. Server-rendered, no client Supabase; keeps the full-height layout from #30.
 
