@@ -66,6 +66,7 @@ Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-21
 - M3 rework: admin list data is loaded on the server; create/disable owners, create farm+device and rotate-key are Server Actions. The one-time device key is still shown only after create or rotate.
+- M3 rework: removed the browser Supabase client and added a lint/build check so client components and the production client bundle cannot talk to Supabase directly.
 - M3 rework: the dashboard is a Server Component that loads farms, devices and latest readings through `getDashboardData()`. The 30 s refresh uses `router.refresh()` so the browser never queries Supabase.
 - M3 rework: cookie sessions via Next.js Proxy (`web/proxy.ts`, the Next.js 16 name for middleware), sign-in/sign-out Server Actions, and `requireAdmin` reading the cookie first. Dashboard table queries still use a cookie-backed browser client until #16.
 - M3 rework: added typed server-only query helpers (`web/lib/db/`) and a cookie-bound `@supabase/ssr` server client. The service-role client now lives in `web/lib/supabase/admin.ts` with `import "server-only"`. Website pages still use the browser client until the follow-up issues.

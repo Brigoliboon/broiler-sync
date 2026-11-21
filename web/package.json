@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/check-no-client-supabase.mjs --bundle",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint && node scripts/check-no-client-supabase.mjs",
     "test": "vitest run"
   },
   "dependencies": {
