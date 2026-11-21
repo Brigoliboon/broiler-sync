@@ -1,7 +1,12 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let client: SupabaseClient | undefined;
 
+/**
+ * Cookie-backed browser client for leftover client-side table queries.
+ * Auth itself goes through Server Actions; this shares the same cookies.
+ */
 export function supabaseBrowser(): SupabaseClient {
   if (client) return client;
 
@@ -14,13 +19,6 @@ export function supabaseBrowser(): SupabaseClient {
     );
   }
 
-  client = createClient(url, publishableKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
-
+  client = createBrowserClient(url, publishableKey);
   return client;
 }

@@ -5,7 +5,7 @@ import {
   validateFarmInput,
 } from "@/lib/admin-validation";
 import { hashDeviceKey } from "@/lib/device-key";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type ProfileRow = {
   id: string;
