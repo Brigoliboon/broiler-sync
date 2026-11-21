@@ -62,3 +62,22 @@ export function minMax(points: readonly Point[]): { min: number; max: number } |
   if (values.length === 0) return null;
   return { min: Math.min(...values), max: Math.max(...values) };
 }
+
+/**
+ * Averages points into `buckets` equal time slots between x0 and x1 so a long
+ * range stays a few hundred SVG points. Empty slots become null (a gap).
+ */
+export function bucketAverage(points: readonly Point[], x0: number, x1: number, buckets: number): Point[] {
+  if (buckets <= 0 || x1 <= x0) return [];
+  const width = (x1 - x0) / buckets;
+  const sums = new Array<number>(buckets).fill(0);
+  const counts = new Array<number>(buckets).fill(0);
+  for (const point of points) {
+    if (typeof point.v !== "number" || !Number.isFinite(point.v)) continue;
+    if (point.t < x0 || point.t > x1) continue;
+    const index = Math.min(buckets - 1, Math.floor((point.t - x0) / width));
+    sums[index] += point.v;
+    counts[index] += 1;
+  }
+  return sums.map((sum, i) => ({ t: x0 + (i + 0.5) * width, v: counts[i] ? sum / counts[i] : null }));
+}

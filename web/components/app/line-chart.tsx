@@ -22,6 +22,7 @@ export function LineChart({
   height,
   label,
   className,
+  maxGapMs,
 }: {
   series: ChartSeries[];
   band?: BandPoint[];
@@ -30,6 +31,8 @@ export function LineChart({
   height: number;
   label: string;
   className?: string;
+  /** Longest gap drawn as a line; longer gaps (missed syncs) leave a break. */
+  maxGapMs?: number;
 }) {
   const width = 1000;
   const bandRange =
@@ -64,7 +67,7 @@ export function LineChart({
     >
       {bandPath ? <path d={bandPath} fill="#EFF6FF" /> : null}
       {series.map((s, i) =>
-        polylines(s.points, scale).map((points, j) => (
+        polylines(s.points, scale, maxGapMs).map((points, j) => (
           <polyline
             key={`${i}-${j}`}
             points={points}

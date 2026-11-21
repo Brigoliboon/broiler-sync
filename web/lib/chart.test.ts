@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { minMax, polylines, valueDomain } from "./chart";
+import { bucketAverage, minMax, polylines, valueDomain } from "./chart";
 
 const scale = { x0: 0, x1: 100, y0: 0, y1: 10, width: 100, height: 10 };
 
@@ -28,5 +28,24 @@ describe("chart geometry", () => {
     expect(valueDomain([[{ t: 0, v: 25 }]], { min: 24, max: 26 })).toEqual({ min: 23.5, max: 26.5 });
     expect(valueDomain([[]])).toBeNull();
     expect(minMax([{ t: 0, v: 3 }, { t: 1, v: null }, { t: 2, v: 1 }])).toEqual({ min: 1, max: 3 });
+  });
+});
+
+describe("bucketAverage", () => {
+  it("averages points per slot and leaves empty slots null", () => {
+    const out = bucketAverage(
+      [
+        { t: 0, v: 1 },
+        { t: 10, v: 3 },
+        { t: 60, v: 5 },
+        { t: 70, v: null },
+        { t: 200, v: 9 },
+      ],
+      0,
+      100,
+      4,
+    );
+    expect(out.map((p) => p.v)).toEqual([2, null, 5, null]);
+    expect(out[0].t).toBe(12.5);
   });
 });
