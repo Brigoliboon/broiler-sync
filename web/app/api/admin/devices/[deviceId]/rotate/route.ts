@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { generateDeviceKey } from "@/lib/admin-key";
 import { hashDeviceKey } from "@/lib/device-key";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type DeviceRow = {
   device_id: string;
