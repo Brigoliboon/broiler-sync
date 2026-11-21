@@ -1,15 +1,6 @@
 import type { ReactNode } from "react";
 
-export const inputClass =
-  "mt-1 w-full rounded-md border border-white/10 bg-[#0c1020] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-white/25";
-
-export const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 disabled:opacity-50";
-
-export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-md border border-white/10 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-white/5 disabled:opacity-50";
-
-export function Section({
+export function Card({
   title,
   description,
   actions,
@@ -21,15 +12,15 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="w-full">
+    <section className="w-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-5">
       {title || actions ? (
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            {title ? (
-              <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
-            ) : null}
+            {title ? <h2 className="text-lg font-semibold">{title}</h2> : null}
             {description ? (
-              <p className="mt-1 text-sm text-zinc-500">{description}</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {description}
+              </p>
             ) : null}
           </div>
           {actions}
@@ -40,25 +31,30 @@ export function Section({
   );
 }
 
-export function Metric({
+export function Stat({
   label,
   value,
   detail,
+  icon,
 }: {
   label: string;
   value: string;
   detail?: string;
+  icon?: ReactNode;
 }) {
   return (
-    <div className="min-w-0">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-medium tabular-nums text-zinc-100">
-        {value}
-      </p>
+    <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          {label}
+        </p>
+        {icon ? <span className="text-violet-500 dark:text-violet-300">{icon}</span> : null}
+      </div>
+      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
       {detail ? (
-        <p className="mt-0.5 truncate text-xs text-zinc-500">{detail}</p>
+        <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
+          {detail}
+        </p>
       ) : null}
     </div>
   );
@@ -74,20 +70,21 @@ export function StatusPill({
   dot?: boolean;
 }) {
   const tones = {
-    neutral: "text-zinc-400",
-    good: "text-emerald-400",
-    bad: "text-red-400",
-    warn: "text-amber-400",
+    neutral:
+      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+    good: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+    bad: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+    warn: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
   };
   const dots = {
-    neutral: "bg-zinc-500",
-    good: "bg-emerald-400",
-    bad: "bg-red-400",
-    warn: "bg-amber-400",
+    neutral: "bg-zinc-400",
+    good: "bg-emerald-500",
+    bad: "bg-red-500",
+    warn: "bg-amber-500",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}
     >
       {dot ? <span className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} /> : null}
       {label}
@@ -96,23 +93,8 @@ export function StatusPill({
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="py-8 text-sm text-zinc-500">{children}</p>;
-}
-
-export function Notice({
-  tone,
-  children,
-}: {
-  tone: "bad" | "good" | "warn";
-  children: ReactNode;
-}) {
-  const tones = {
-    bad: "border-red-500/30 bg-red-500/10 text-red-300",
-    good: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-    warn: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  };
   return (
-    <div className={`w-full rounded-lg border px-4 py-3 text-sm ${tones[tone]}`}>
+    <div className="w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
       {children}
     </div>
   );
