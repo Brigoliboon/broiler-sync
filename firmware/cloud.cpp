@@ -149,8 +149,14 @@ static bool sendBatch(bool events, bool& more) {
     String resp;
     int code = httpDo(true, events ? "/api/alerts" : "/api/readings", &body, &resp);
     esp_task_wdt_reset();
-    Serial.printf("POST %s x%d -> %d\n", events ? "/api/alerts" : "/api/readings", n, code);
+    const char* path = events ? "/api/alerts" : "/api/readings";
+    Serial.printf("POST %s x%d -> %d\n", path, n, code);
     bool ok = code >= 200 && code < 300;
+    if (!ok) {
+      resp.trim();
+      if (resp.length() > 180) resp = resp.substring(0, 180);
+      if (resp.length()) Serial.printf("Server said: %s\n", resp.c_str());
+    }
     if (ok || shouldDrop(code)) {
       if (!ok) Serial.println("Server rejected this batch permanently - dropped");
       if (events) storageCommitEvents(); else storageCommitReadings();

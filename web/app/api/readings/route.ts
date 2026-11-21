@@ -13,7 +13,11 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "invalid JSON body" }, { status: 400 });
+    console.error("readings: invalid JSON body");
+    return Response.json(
+      { error: "invalid JSON body (expected an array of readings)" },
+      { status: 400 },
+    );
   }
 
   let batch;
@@ -21,6 +25,7 @@ export async function POST(request: Request) {
     batch = validateReadingBatch(payload, auth.deviceId);
   } catch (error) {
     if (error instanceof BatchValidationError) {
+      console.error("readings validation failed", error.message);
       return Response.json({ error: error.message }, { status: 400 });
     }
     throw error;
