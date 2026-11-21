@@ -1,53 +1,9 @@
-"use client";
-
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AppShell, FarmAvatar } from "@/components/app-shell";
+import type { ReactNode } from "react";
+import { FarmAvatar } from "@/components/app-shell";
 import { BatteryIcon, BellIcon, CalendarIcon, ClockIcon, DropletIcon, FanIcon, GearIcon, HourglassIcon, LampIcon, ThermometerIcon, WindIcon } from "@/components/icons";
 import { Card, EmptyState, Stat, StatusPill } from "@/components/ui";
+import type { DashboardItem } from "@/lib/db/dashboard";
 import { formatNumber, formatTime, isDeviceOnline } from "@/lib/dashboard-utils";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-
-type ProfileRow = { role: string };
-
-type FarmRow = { id: string; name: string };
-
-type DeviceRow = {
-  device_id: string;
-  farm_id: string;
-  last_seen_at: string | null;
-  disabled_at: string | null;
-};
-
-type ReadingRow = {
-  device_id: string;
-  ts: string | null;
-  uptime_s: number;
-  age: number | null;
-  setpoint: number | null;
-  e_temp: number | null;
-  e_hum: number | null;
-  e_wind: number | null;
-  e_temp_status: string | null;
-  e_wind_status: string | null;
-  c_temp: number | null;
-  c_hum: number | null;
-  c_wind: number | null;
-  c_temp_status: string | null;
-  c_wind_status: string | null;
-  batt_v: number | null;
-  fan: boolean;
-  lamp: boolean;
-  mode: string;
-  alert_level: string;
-  alert_codes: string[] | null;
-  reason: string | null;
-};
-
-type DashboardItem = {
-  farm: FarmRow;
-  device: DeviceRow | null;
-  reading: ReadingRow | null;
-};
 
 function CompartmentCard({
   title,
@@ -91,96 +47,24 @@ function CompartmentCard({
   );
 }
 
-type Props = {
-  userId: string;
-  role: string;
-};
-
-export function DashboardClient({ userId, role: initialRole }: Props) {
-  const [supabase] = useState<ReturnType<typeof supabaseBrowser> | null>(() => {
-    try { return supabaseBrowser(); } catch { return null; }
-  });
-  const [configError] = useState<string | null>(() => {
-    try { supabaseBrowser(); return null; }
-    catch (caught) { return caught instanceof Error ? caught.message : "Browser Supabase configuration is missing"; }
-  });
-  const [role, setRole] = useState(initialRole);
-  const [items, setItems] = useState<DashboardItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadData = useCallback(
-    async () => {
-      if (!supabase) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const [profileRes, farmsRes, devicesRes, readingsRes] = await Promise.all([
-          supabase.from("profiles").select("role").eq("id", userId).maybeSingle(),
-          supabase.from("farms").select("id, name").order("name"),
-          supabase.from("devices").select("device_id, farm_id, last_seen_at, disabled_at"),
-          supabase.from("latest_readings").select("*"),
-        ]);
-        const queryError = profileRes.error ?? farmsRes.error ?? devicesRes.error ?? readingsRes.error;
-        if (queryError) throw new Error(queryError.message);
-
-        const profile = profileRes.data as ProfileRow | null;
-        const farms = (farmsRes.data ?? []) as FarmRow[];
-        const devices = (devicesRes.data ?? []) as DeviceRow[];
-        const readings = (readingsRes.data ?? []) as ReadingRow[];
-        const deviceByFarm = new Map(devices.map((device) => [device.farm_id, device]));
-        const readingByDevice = new Map(readings.map((reading) => [reading.device_id, reading]));
-
-        setRole(profile?.role ?? "owner");
-        setItems(farms.map((farm) => {
-          const device = deviceByFarm.get(farm.id) ?? null;
-          return {
-            farm,
-            device,
-            reading: device ? (readingByDevice.get(device.device_id) ?? null) : null,
-          };
-        }));
-      } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [supabase, userId],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.resolve().then(() => {
-      if (!cancelled) void loadData();
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadData]);
-
-  useEffect(() => {
-    const interval = setInterval(() => { void loadData(); }, 30000);
-    return () => clearInterval(interval);
-  }, [loadData]);
-
-  const shownError = error ?? configError;
-  const online = items.some((item) => isDeviceOnline(item.device?.last_seen_at ?? null));
-
+export function DashboardView({
+  items,
+  error,
+}: {
+  items: DashboardItem[];
+  error?: string | null;
+}) {
   return (
-    <AppShell
-      title="Dashboard"
-      subtitle="Live status for both compartments"
-      role={role}
-      online={online}
-      refreshing={loading}
-      onRefresh={() => void loadData()}
-    >
-      {shownError ? (
-        <p className="w-full rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{shownError}</p>
+    <>
+      {error ? (
+        <p className="w-full rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </p>
       ) : null}
 
-      {items.length === 0 && !loading ? <EmptyState>No farms assigned to this account yet.</EmptyState> : null}
+      {items.length === 0 && !error ? (
+        <EmptyState>No farms assigned to this account yet.</EmptyState>
+      ) : null}
 
       {items.map(({ farm, device, reading }) => {
         const deviceOnline = isDeviceOnline(device?.last_seen_at ?? null);
@@ -264,7 +148,6 @@ export function DashboardClient({ userId, role: initialRole }: Props) {
           </section>
         );
       })}
-    </AppShell>
+    </>
   );
 }
-
