@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import {
   BatteryLow,
   Bell,
@@ -10,7 +9,7 @@ import {
   WifiOff,
   type LucideIcon,
 } from "lucide-react";
-import { AppFrame, DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
 import { Card, EmptyNote, ErrorNote, IconBox, Tag, cx } from "@/components/app/ui";
 import { feedItem, type FeedItem } from "@/lib/alert-feed";
 import { DEFAULT_LIMITS } from "@/lib/climate";
@@ -96,7 +95,7 @@ function Tabs({ tab, activeCount }: { tab: "active" | "resolved"; activeCount: n
   );
 }
 
-async function AlertsBody({ searchParams }: { searchParams: PageProps<"/alerts">["searchParams"] }) {
+export default async function AlertsPage({ searchParams }: PageProps<"/alerts">) {
   const [ctx, params] = await Promise.all([getAppContext(), searchParams]);
   const tab = params.tab === "resolved" ? "resolved" : "active";
   const device = ctx.current?.device ?? null;
@@ -160,7 +159,7 @@ async function AlertsBody({ searchParams }: { searchParams: PageProps<"/alerts">
     );
 
   return (
-    <AppFrame ctx={ctx} active="alerts">
+    <>
       <PhoneBar ctx={ctx} />
       <DesktopTop icon={Bell} title="Alerts" />
       <PageBody className="lg:items-center">
@@ -170,18 +169,6 @@ async function AlertsBody({ searchParams }: { searchParams: PageProps<"/alerts">
           {list}
         </div>
       </PageBody>
-    </AppFrame>
-  );
-}
-
-function Fallback() {
-  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
-}
-
-export default function AlertsPage({ searchParams }: PageProps<"/alerts">) {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <AlertsBody searchParams={searchParams} />
-    </Suspense>
+    </>
   );
 }

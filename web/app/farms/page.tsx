@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { ChevronRight, House, LogOut } from "lucide-react";
 import { signOut } from "@/app/login/actions";
+import { FarmsListSkeleton } from "@/components/app/skeleton";
 import { OnlineChip, cx } from "@/components/app/ui";
 import { getAppContext } from "@/lib/db/app-context";
 import { selectFarm } from "./actions";
@@ -61,7 +62,7 @@ export default function FarmsPage() {
           <h1 className="text-xl leading-[1.3] font-bold">Your farms</h1>
           <p className="text-sm text-muted">Pick a farm to open its dashboard</p>
         </header>
-        <Suspense fallback={<p className="p-4 text-sm text-muted">Loading farms…</p>}>
+        <Suspense fallback={<FarmsListSkeleton />}>
           <FarmList />
         </Suspense>
       </div>

@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { ChartLine } from "lucide-react";
-import { AppFrame, DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { getAppContext } from "@/lib/db/app-context";
 import { listDailyStats, type DailyStat } from "@/lib/db/daily-stats";
@@ -8,11 +7,7 @@ import { listReadingSeries, type SeriesRow } from "@/lib/db/series";
 import { parseHistoryQuery } from "@/lib/history";
 import { HistoryView } from "./history-view";
 
-function Fallback() {
-  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
-}
-
-async function HistoryBody({ searchParams }: { searchParams: PageProps<"/history">["searchParams"] }) {
+export default async function HistoryPage({ searchParams }: PageProps<"/history">) {
   const [ctx, params] = await Promise.all([getAppContext(), searchParams]);
   const query = parseHistoryQuery(params, ctx.now);
   const device = ctx.current?.device ?? null;
@@ -48,18 +43,10 @@ async function HistoryBody({ searchParams }: { searchParams: PageProps<"/history
     );
 
   return (
-    <AppFrame ctx={ctx} active="history">
+    <>
       <PhoneBar ctx={ctx} />
       <DesktopTop icon={ChartLine} title="History" />
       <PageBody>{content}</PageBody>
-    </AppFrame>
-  );
-}
-
-export default function HistoryPage({ searchParams }: PageProps<"/history">) {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <HistoryBody searchParams={searchParams} />
-    </Suspense>
+    </>
   );
 }

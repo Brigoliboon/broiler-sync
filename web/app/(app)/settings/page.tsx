@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Bird, Bot, Calendar, ChevronLeft, Hand, Info, Save, Settings, Target } from "lucide-react";
-import { AppFrame, DesktopTop, PageBody } from "@/components/app/app-frame";
+import { DesktopTop, PageBody } from "@/components/app/app-frame";
 import { Card, EmptyNote, ErrorNote, cx } from "@/components/app/ui";
 import { DEFAULT_LIMITS, humidityLimits, setpointForAge, windLimit } from "@/lib/climate";
 import { listAgeThresholds, type AgeThreshold } from "@/lib/db/age-thresholds";
@@ -35,7 +35,7 @@ function SectionLabel({ icon, children }: { icon: ReactNode; children: ReactNode
   return <span className="mb-1 flex items-center gap-2 text-sm font-semibold">{icon}{children}</span>;
 }
 
-async function SettingsBody() {
+export default async function SettingsPage() {
   const ctx = await getAppContext();
   const device = ctx.current?.device ?? null;
   const settings = ctx.settings;
@@ -138,7 +138,7 @@ async function SettingsBody() {
     );
 
   return (
-    <AppFrame ctx={ctx} active="settings" phoneNav={false}>
+    <>
       <header className="flex items-center gap-2 border-b border-border bg-surface p-4 lg:hidden">
         <Link
           href="/dashboard"
@@ -153,18 +153,6 @@ async function SettingsBody() {
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">{content}</div>
       </PageBody>
-    </AppFrame>
-  );
-}
-
-function Fallback() {
-  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
-}
-
-export default function SettingsPage() {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <SettingsBody />
-    </Suspense>
+    </>
   );
 }
