@@ -1,5 +1,4 @@
-import { ChartLine } from "lucide-react";
-import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { PageBody } from "@/components/app/app-frame";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { getAppContext } from "@/lib/db/app-context";
 import { listDailyStats, type DailyStat } from "@/lib/db/daily-stats";
@@ -42,11 +41,5 @@ export default async function HistoryPage({ searchParams }: PageProps<"/history"
       />
     );
 
-  return (
-    <>
-      <PhoneBar ctx={ctx} />
-      <DesktopTop icon={<ChartLine size={24} className="text-primary" aria-hidden />} title="History" />
-      <PageBody>{content}</PageBody>
-    </>
-  );
+  return <PageBody>{content}</PageBody>;
 }
