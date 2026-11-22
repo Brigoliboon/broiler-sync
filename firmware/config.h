@@ -7,7 +7,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FW_VERSION "2.1.0"
+#define FW_VERSION "2.2.0"
 
 // ---------------------------------------------------------------------------
 // 0. SIMULATOR SWITCH
@@ -156,14 +156,49 @@
 
 #define GUARD_BYPASS_ON_CRITICAL 1  // brooding guard is ignored while temp >= setpoint+crit (heat stress)
 
-// Safe state when the EXPERIMENTAL DHT22 is failed (AUTO mode):
-//   fan cycles at low duty, lamp OFF, CRITICAL alert E_TEMP_SENSOR.
-#define SAFE_FAN_ON_S      120
-#define SAFE_FAN_OFF_S     480
+// ---------------------------------------------------------------------------
+// 7b. FAIL-SAFE DEFAULTS (FR-10)  -- PROPOSED, awaiting Boon's confirmation.
+//     Every fail-safe choice lives here so it can be changed in one place.
+//     "Brooding" = broiler age <= brood_days (server config, default 14).
+// ---------------------------------------------------------------------------
+// (a) Experimental DHT22 failed, AUTO mode: no temperature feedback, so the fan
+//     runs a fixed duty cycle and a CRITICAL E_TEMP_SENSOR alert is raised.
+//     Brooding: short, low-duty bursts (no strong air at chick level).
+#define SAFE_FAN_ON_S             120   // brooding: fan ON 2 min ...
+#define SAFE_FAN_OFF_S            480   //           ... then OFF 8 min (20 % duty)
+//     After brooding: heat is the bigger risk for grown birds, so ventilate more.
+#define SAFE_FAN_ON_S_GROWER      600   // after brooding: fan ON 10 min ...
+#define SAFE_FAN_OFF_S_GROWER     300   //                 ... then OFF 5 min (67 % duty)
+//     Lamp while the sensor is failed. 0 = lamp always OFF (a lamp with no
+//     temperature feedback can overheat chicks). 1 = while brooding, lamp ON
+//     during the fan's OFF phase (never together with the fan).
+#define SAFE_LAMP_BROODING        0
 
-// If the broiler age is unknown (no flock start yet, no cached age, no clock):
+// (b) MANUAL override limits. The brooding airflow guard (fan_max_on_s run,
+//     then fan_rest_s rest) also limits a manual fan while brooding, so a manual
+//     command cannot blow strong air at chicks non-stop. Still bypassed during
+//     heat stress (GUARD_BYPASS_ON_CRITICAL). 0 = manual ignores the guard.
+#define MANUAL_BROOD_GUARD        1
+//     Wi-Fi loss during a manual override: the remote operator can no longer
+//     see or cancel it, so end it and resume AUTO after this many minutes
+//     offline. 0 = keep running until the override's own timer ends.
+#define MANUAL_OFFLINE_END_MIN    15
+
+// (c) Power loss / reboot. Relays always boot OFF and stay OFF until the first
+//     valid experimental temperature (or until that sensor is declared failed,
+//     ~15 s, which starts (a)). The cached server config, last known age and
+//     any running manual override are restored from flash.
+//     1 = resume a manual override after a reboot, only if the clock is valid
+//         and it has not expired yet (otherwise AUTO). 0 = always reboot to AUTO.
+#define MANUAL_RESUME_AFTER_REBOOT 1
+
+// (d) Broiler age unknown (no flock start yet, no cached age, no clock):
 #define FALLBACK_AGE_DAYS  7        // 26 C setpoint, brooding guard active, AGE_UNKNOWN warning
 #define AGE_MAX_PLAUSIBLE  120      // computed age above this is treated as stale config
+
+// (e) Wi-Fi loss (no constant needed): control keeps running on the cached
+//     config, every reading is still logged to SD (RAM ring if SD fails), and
+//     everything unsent is backfilled oldest-first when Wi-Fi returns.
 
 // ---------------------------------------------------------------------------
 // 8. ALERT DEBOUNCE

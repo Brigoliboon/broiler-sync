@@ -112,7 +112,7 @@ void settingsBegin() {
 
   // A manual session can only be resumed when we can tell whether it already expired.
   if (manual.active) {
-    if (manual.endsEpoch != 0 && clockValid() && clockEpoch() < manual.endsEpoch) {
+    if (MANUAL_RESUME_AFTER_REBOOT && manual.endsEpoch != 0 && clockValid() && clockEpoch() < manual.endsEpoch) {
       manualEndsMs = millis() + (manual.endsEpoch - clockEpoch()) * 1000UL;
       Serial.println("Manual override resumed after reboot");
     } else {

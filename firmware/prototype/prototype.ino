@@ -162,14 +162,49 @@
 
 #define GUARD_BYPASS_ON_CRITICAL 1  // brooding guard is ignored while temp >= setpoint+crit (heat stress)
 
-// Safe state when the EXPERIMENTAL DHT22 is failed (AUTO mode):
-//   fan cycles at low duty, lamp OFF, CRITICAL alert E_TEMP_SENSOR.
-#define SAFE_FAN_ON_S      120
-#define SAFE_FAN_OFF_S     480
+// ---------------------------------------------------------------------------
+// 7b. FAIL-SAFE DEFAULTS (FR-10)  -- PROPOSED, awaiting Boon's confirmation.
+//     Every fail-safe choice lives here so it can be changed in one place.
+//     "Brooding" = broiler age <= brood_days (server config, default 14).
+// ---------------------------------------------------------------------------
+// (a) Experimental DHT22 failed, AUTO mode: no temperature feedback, so the fan
+//     runs a fixed duty cycle and a CRITICAL E_TEMP_SENSOR alert is raised.
+//     Brooding: short, low-duty bursts (no strong air at chick level).
+#define SAFE_FAN_ON_S             120   // brooding: fan ON 2 min ...
+#define SAFE_FAN_OFF_S            480   //           ... then OFF 8 min (20 % duty)
+//     After brooding: heat is the bigger risk for grown birds, so ventilate more.
+#define SAFE_FAN_ON_S_GROWER      600   // after brooding: fan ON 10 min ...
+#define SAFE_FAN_OFF_S_GROWER     300   //                 ... then OFF 5 min (67 % duty)
+//     Lamp while the sensor is failed. 0 = lamp always OFF (a lamp with no
+//     temperature feedback can overheat chicks). 1 = while brooding, lamp ON
+//     during the fan's OFF phase (never together with the fan).
+#define SAFE_LAMP_BROODING        0
 
-// If the broiler age is unknown (no flock start yet, no cached age, no clock):
+// (b) MANUAL override limits. The brooding airflow guard (fan_max_on_s run,
+//     then fan_rest_s rest) also limits a manual fan while brooding, so a manual
+//     command cannot blow strong air at chicks non-stop. Still bypassed during
+//     heat stress (GUARD_BYPASS_ON_CRITICAL). 0 = manual ignores the guard.
+#define MANUAL_BROOD_GUARD        1
+//     Wi-Fi loss during a manual override: the remote operator can no longer
+//     see or cancel it, so end it and resume AUTO after this many minutes
+//     offline. 0 = keep running until the override's own timer ends.
+#define MANUAL_OFFLINE_END_MIN    15
+
+// (c) Power loss / reboot. Relays always boot OFF and stay OFF until the first
+//     valid experimental temperature (or until that sensor is declared failed,
+//     ~15 s, which starts (a)). The cached server config, last known age and
+//     any running manual override are restored from flash.
+//     1 = resume a manual override after a reboot, only if the clock is valid
+//         and it has not expired yet (otherwise AUTO). 0 = always reboot to AUTO.
+#define MANUAL_RESUME_AFTER_REBOOT 1
+
+// (d) Broiler age unknown (no flock start yet, no cached age, no clock):
 #define FALLBACK_AGE_DAYS  7        // 26 C setpoint, brooding guard active, AGE_UNKNOWN warning
 #define AGE_MAX_PLAUSIBLE  120      // computed age above this is treated as stale config
+
+// (e) Wi-Fi loss (no constant needed): control keeps running on the cached
+//     config, every reading is still logged to SD (RAM ring if SD fails), and
+//     everything unsent is backfilled oldest-first when Wi-Fi returns.
 
 // ---------------------------------------------------------------------------
 // 8. ALERT DEBOUNCE
@@ -371,6 +406,7 @@ void cloudBegin();
 void cloudService();                       // non-blocking apart from short HTTP calls
 void cloudRequestSyncNow();                // immediate upload (also restarts the 5-min countdown)
 bool cloudWifiUp();
+uint32_t cloudWifiDownMs();
 
 
 // ====== internal types ======
@@ -511,6 +547,7 @@ int storagePeekEvents(String* lines, int maxLines);
 void storageCommitEvents();
 void storageService();
 bool cloudWifiUp();
+uint32_t cloudWifiDownMs();
 void cloudBegin();
 void cloudRequestSyncNow();
 int httpDo(bool post, const String& path, const String* body, String* resp);
@@ -733,7 +770,7 @@ void settingsBegin() {
 
   // A manual session can only be resumed when we can tell whether it already expired.
   if (manual.active) {
-    if (manual.endsEpoch != 0 && clockValid() && clockEpoch() < manual.endsEpoch) {
+    if (MANUAL_RESUME_AFTER_REBOOT && manual.endsEpoch != 0 && clockValid() && clockEpoch() < manual.endsEpoch) {
       manualEndsMs = millis() + (manual.endsEpoch - clockEpoch()) * 1000UL;
       Serial.println("Manual override resumed after reboot");
     } else {
@@ -1227,6 +1264,24 @@ bool manualExpired(uint32_t now) {
   return (int32_t)(now - manualEndsMs) >= 0;
 }
 
+// Brooding airflow guard (FR-10: no strong air at chick level while brooding):
+// after fan_max_on_s of continuous running the fan is forced off for fan_rest_s.
+// Skipped during heat stress (temp >= setpoint + temp_crit_delta). Returns the
+// fan request after the guard.
+static bool broodGuard(bool wf, bool hotCrit, uint32_t now) {
+  bool guard = (ctl.age <= cfg.broodDays) && !(GUARD_BYPASS_ON_CRITICAL && hotCrit);
+  if (!guard) return wf;
+  if (fanR.state && (now - fanR.onSince) >= (uint32_t)cfg.fanMaxOnS * 1000UL) {
+    fanRestUntil = now + (uint32_t)cfg.fanRestS * 1000UL;
+    return false;
+  }
+  if (!fanR.state && (int32_t)(fanRestUntil - now) > 0) {
+    ctl.fanResting = true;
+    return false;
+  }
+  return wf;
+}
+
 void decideRelays(uint32_t now) {
   bool wantFan = fanR.state, wantLamp = lampR.state;
   bool forceLampOff = false;
@@ -1237,28 +1292,42 @@ void decideRelays(uint32_t now) {
     manualStop();
     Serial.println("Manual override ended, AUTO resumes");
   }
+#if MANUAL_OFFLINE_END_MIN > 0
+  // FR-10: the remote operator can't see or cancel the override while Wi-Fi is down.
+  if (manual.active && cloudWifiDownMs() >= (uint32_t)MANUAL_OFFLINE_END_MIN * 60000UL) {
+    manualStop();
+    Serial.printf("Manual override ended: Wi-Fi down %d min, AUTO resumes\n", (int)MANUAL_OFFLINE_END_MIN);
+  }
+#endif
   ctl.manualActive = manual.active != 0;
 
   bool tOk = sensorOk(expC.tempSt);
 
   if (ctl.manualActive) {
-    // MANUAL: operator's choice for the fixed time. The brooding guard and sensor rules are
-    // bypassed (the override expiry is the safety net); the 30 s relay interval and the
-    // "fan wins over lamp" rule still apply.
+    // MANUAL (FR-9): operator's fan/lamp choice until the override times out, then AUTO.
+    // Sensor rules are bypassed (the expiry is the safety net). The 30 s relay interval,
+    // "fan wins over lamp" and, with MANUAL_BROOD_GUARD, the brooding guard still apply.
+    wantLamp = (manual.lamp != 0) && !(manual.fan != 0);
     wantFan = manual.fan != 0;
-    wantLamp = (manual.lamp != 0) && !wantFan;
+#if MANUAL_BROOD_GUARD
+    wantFan = broodGuard(wantFan, tOk && expC.temp >= ctl.setpoint + cfg.tempCritDelta, now);
+#endif
     ctl.bootHold = false;
   } else if (!tOk && expC.tempSt == ST_UNKNOWN) {
     // Boot / first reading not in yet: everything OFF.
     wantFan = false; wantLamp = false;
   } else if (!tOk) {
-    // SAFE STATE: experimental DHT22 failed. Ventilate at a low duty cycle, lamp off.
+    // SAFE STATE (FR-10): experimental DHT22 failed. Fixed fan duty cycle (shorter while
+    // brooding), lamp per SAFE_LAMP_BROODING. Defaults are in config.h section 7b.
     ctl.bootHold = false;
     ctl.safeMode = true;
     if (!prevSafe) safeStartMs = now;
-    uint32_t cycle = (uint32_t)(SAFE_FAN_ON_S + SAFE_FAN_OFF_S) * 1000UL;
-    wantFan = ((now - safeStartMs) % cycle) < (uint32_t)SAFE_FAN_ON_S * 1000UL;
-    wantLamp = false;
+    bool brooding = ctl.age <= cfg.broodDays;
+    uint32_t onS  = brooding ? SAFE_FAN_ON_S  : SAFE_FAN_ON_S_GROWER;
+    uint32_t offS = brooding ? SAFE_FAN_OFF_S : SAFE_FAN_OFF_S_GROWER;
+    uint32_t cycle = (onS + offS) * 1000UL;
+    wantFan = ((now - safeStartMs) % cycle) < onS * 1000UL;
+    wantLamp = SAFE_LAMP_BROODING && brooding && !wantFan;
   } else {
     ctl.bootHold = false;
     float T = expC.temp, sp = ctl.setpoint;
@@ -1269,18 +1338,7 @@ void decideRelays(uint32_t now) {
     else if (wf && T <= sp + cfg.fanOffDelta) wf = false;
 
     // --- brooding airflow guard: max run then forced rest (not during heat stress)
-    bool hotCrit = T >= sp + cfg.tempCritDelta;
-    bool guard = (ctl.age <= cfg.broodDays) && !(GUARD_BYPASS_ON_CRITICAL && hotCrit);
-    if (guard) {
-      if (fanR.state && (now - fanR.onSince) >= (uint32_t)cfg.fanMaxOnS * 1000UL) {
-        wf = false;
-        fanRestUntil = now + (uint32_t)cfg.fanRestS * 1000UL;
-      } else if (!fanR.state && (int32_t)(fanRestUntil - now) > 0) {
-        wf = false;
-        ctl.fanResting = true;
-      }
-    }
-    wantFan = wf;
+    wantFan = broodGuard(wf, T >= sp + cfg.tempCritDelta, now);
 
     // --- lamp: on when cold, off at the setpoint
     bool wl = lampR.state;
@@ -1654,6 +1712,9 @@ static uint32_t lastCfgOk = 0, lastCfgTry = 0;
 static bool cfgEver = false;
 
 bool cloudWifiUp() { return WiFi.status() == WL_CONNECTED; }
+// wifiWasUp is still true until cloudService() has recorded the drop, so a stale
+// wifiDownSince is never used.
+uint32_t cloudWifiDownMs() { return (cloudWifiUp() || wifiWasUp) ? 0 : millis() - wifiDownSince; }
 
 void cloudBegin() {
   WiFi.mode(WIFI_STA);

@@ -16,8 +16,8 @@ Deadline: **2026-11-29**.
 - [x] Sensor fault detection (FR-5)
 - [x] Age-based fan setpoints with hysteresis (FR-6, FR-7)
 - [x] Lamp rule (FR-8)
-- [ ] Manual and auto modes with timed override (FR-9)
-- [ ] Fail-safe defaults for sensor, power and Wi-Fi loss (FR-10), after Boon confirms them
+- [x] Manual and auto modes with timed override (FR-9)
+- [ ] Fail-safe defaults for sensor, power and Wi-Fi loss (FR-10): implemented with proposed defaults (`firmware/config.h` section 7b), awaiting Boon's confirmation
 - [x] Settings cached in flash (FR-12)
 - [x] SD logging every 1 minute with RTC time (FR-4, FR-13)
 - [x] 1602 I2C LCD status display with rotating pages (FR-25)
@@ -71,6 +71,7 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M2 firmware: FR-9 manual/auto modes with timed override, driven by `mode` / `manual_id` / `manual_fan` / `manual_lamp` / `manual_minutes` from the device config; ends on timeout, on `mode: auto`, or after 15 min offline. FR-10 fail-safe defaults gathered in `config.h` section 7b (sensor-fail fan duty by age, lamp off, brooding guard also limits a manual fan, manual resume after reboot only with a valid clock); proposed, awaiting Boon's confirmation. Compile-tested only, no hardware test yet.
 - M3 UI: Admin · Owners restyled to frame 08 (FR-17, FR-18): owner cards on phones and a table (960px max) on desktop, with initials, Active/Disabled, farm and ESP32 counts, Disable/Enable and an Add owner form. Farm + ESP32 creation, the one-time key and key rotation are kept below in the same style. Uses the existing admin Server Actions; the old dark `app-shell`, `icons` and `ui` components are removed.
 - M3 UI: Farm settings screen (FR-24, read-only): flock start date with today's flock day, mode, and the day's target temperature (`age_thresholds`), humidity range and air speed limit (`device_settings`). The steppers, mode toggle and Save button are disabled until editing lands; FR-24 editing is pending for Boon.
 - M3 UI: Export screen and CSV download (FR-22): `GET /api/export` checks the cookie session and that the farm is visible under RLS, then streams an Excel-friendly CSV (UTF-8 BOM, CRLF, Manila timestamps) with the columns from the design, one row per reading per compartment, up to 92 days.
