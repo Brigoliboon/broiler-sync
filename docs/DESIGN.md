@@ -416,7 +416,9 @@ Humidity and wind bands match FR-23. Temperature "outside the setpoint band" in 
 
 ### 6.2 Server-originated: device offline (FR-23)
 
-The firmware cannot report that it is offline. A scheduled job (Vercel Cron, every 5 minutes) marks a device offline when `last_seen_at` is older than **12 minutes** (two missed 5-minute syncs plus slack). That timeout is decided. It inserts `alerts` with `source = server`, `event = start`, `code = DEVICE_OFFLINE`, `severity = warning`. When the device authenticates again, the API writes the matching `clear`.
+The firmware cannot report that it is offline. A scheduled job (every 5 minutes) marks a device offline when `last_seen_at` is older than **12 minutes** (two missed 5-minute syncs plus slack). That timeout is decided. It inserts `alerts` with `source = server`, `event = start`, `code = DEVICE_OFFLINE`, `severity = warning`. When the device authenticates again, the API writes the matching `clear`.
+
+The job lives at `GET`/`POST` `/api/cron/device-offline` and requires `Authorization: Bearer $CRON_SECRET`. Vercel Hobby only allows a cron once per day, which is too slow for a 12-minute timeout, so the 5-minute trigger is Supabase `pg_cron` + `pg_net` (`supabase/cron_device_offline.sql`) calling that route. If the project is later moved to Vercel Pro, a 5-minute Vercel Cron can replace or be used instead of the Supabase schedule; keep only one 5-minute trigger. The handler still dedupes so a double fire does not open a second incident.
 
 ### 6.3 Power loss (FR-23, NFR-5)
 
@@ -465,6 +467,7 @@ Set these in Vercel (Production and Preview) and in local `web/.env.local` (giti
 | `VAPID_SUBJECT` | server | `mailto:` contact for the push service |
 | `DEVICE_KEY_PEPPER` | **server only** | optional; mixed into `key_hash` |
 | `DEVICE_OFFLINE_AFTER_MS` | server | default 12 minutes (`720000`) |
+| `CRON_SECRET` | **server only** | Bearer token for `/api/cron/device-offline`. Required. Also stored with the Supabase pg_cron job that calls the route |
 
 Firmware (`config.h`, placeholders only in git): `WIFI_SSID`, `WIFI_PASS`, `API_BASE` (the Vercel origin, no trailing slash), `DEVICE_ID`, `DEVICE_KEY`, optional `API_ROOT_CA`.
 

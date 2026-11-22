@@ -38,7 +38,7 @@ Deadline: **2026-11-29**.
 - [ ] Web push alerts (FR-23)
   - [x] Alerts screen, push opt-in and a push on each new device alert `start`
   - [ ] VAPID keys set in Vercel (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
-  - [ ] Scheduled `DEVICE_OFFLINE` job (Vercel Cron, 12 min) and its push
+  - [x] Scheduled `DEVICE_OFFLINE` job (every 5 min via Supabase pg_cron + pg_net, 12 min timeout) and its push
 - [ ] Optional: setpoint and mode controls (FR-24)
   - [x] Farm settings screen, read-only: flock start date, mode and the day's setpoints (controls drawn but disabled)
   - [ ] Editing from the website: pending, Boon to implement
@@ -71,11 +71,12 @@ Deadline: **2026-11-29**.
 Newest first. Times are Asia/Manila (UTC+8).
 
 ### 2026-11-22
+- M3: Scheduled DEVICE_OFFLINE job (FR-23). GET/POST `/api/cron/device-offline` is protected with `CRON_SECRET` (Bearer). The Vercel project is on Hobby, which only allows a daily cron, so the 5-minute schedule is Supabase pg_cron + pg_net (`supabase/cron_device_offline.sql`) calling that route. Timeout is 12 minutes after `last_seen_at` (`DEVICE_OFFLINE_MS`, overridable with `DEVICE_OFFLINE_AFTER_MS`). One `start` per outage; `touchDevice` already writes the `clear` on reconnect (no push for clear).
 - M2 firmware: FR-9 manual/auto modes with timed override, driven by `mode` / `manual_id` / `manual_fan` / `manual_lamp` / `manual_minutes` from the device config; ends on timeout, on `mode: auto`, or after 15 min offline. FR-10 fail-safe defaults gathered in `config.h` section 7b (sensor-fail fan duty by age, lamp off, brooding guard also limits a manual fan, manual resume after reboot only with a valid clock); proposed, awaiting Boon's confirmation. Compile-tested only, no hardware test yet.
 - M3 UI: Admin · Owners restyled to frame 08 (FR-17, FR-18): owner cards on phones and a table (960px max) on desktop, with initials, Active/Disabled, farm and ESP32 counts, Disable/Enable and an Add owner form. Farm + ESP32 creation, the one-time key and key rotation are kept below in the same style. Uses the existing admin Server Actions; the old dark `app-shell`, `icons` and `ui` components are removed.
 - M3 UI: Farm settings screen (FR-24, read-only): flock start date with today's flock day, mode, and the day's target temperature (`age_thresholds`), humidity range and air speed limit (`device_settings`). The steppers, mode toggle and Save button are disabled until editing lands; FR-24 editing is pending for Boon.
 - M3 UI: Export screen and CSV download (FR-22): `GET /api/export` checks the cookie session and that the farm is visible under RLS, then streams an Excel-friendly CSV (UTF-8 BOM, CRLF, Manila timestamps) with the columns from the design, one row per reading per compartment, up to 92 days.
-- M3 UI: Alerts screen (FR-23): active and resolved incidents built from the start/clear log, a push opt-in switch (service worker `public/sw.js`, subscription saved by a Server Action under RLS), and web push from `/api/alerts` for fresh `start` events, run after the device gets its response. Push needs the VAPID env vars; the offline cron job is still open.
+- M3 UI: Alerts screen (FR-23): active and resolved incidents built from the start/clear log, a push opt-in switch (service worker `public/sw.js`, subscription saved by a Server Action under RLS), and web push from `/api/alerts` for fresh `start` events, run after the device gets its response. Push needs the VAPID env vars.
 - M3 UI: History screen (FR-20, FR-21): 24 h / 7 days / custom range (up to 31 days), temperature, humidity and air speed charts for both compartments with the target band, and the daily min/avg/max table from the `daily_stats` view. Readings are paged on the server and averaged into 240 chart points.
 - M3 UI: Clean Flat tokens, app shell (248px sidebar from 1024px, phone bottom nav), login, farm switcher (only with more than one farm) and the phone/desktop dashboard from Pixel's Figma frames. Server-rendered, no client Supabase; keeps the full-height layout from #30.
 
