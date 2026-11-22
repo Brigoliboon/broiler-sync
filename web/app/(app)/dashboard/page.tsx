@@ -1,5 +1,5 @@
-import { LayoutDashboard } from "lucide-react";
-import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { PageBody } from "@/components/app/app-frame";
+import { ShellExtras } from "@/components/app/app-shell";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { DEFAULT_LIMITS } from "@/lib/climate";
 import { getAppContext } from "@/lib/db/app-context";
@@ -65,15 +65,17 @@ export default async function DashboardPage() {
   return (
     <>
       <AutoRefresh />
-      <PhoneBar ctx={ctx}>{device ? <StatusChips model={model} /> : null}</PhoneBar>
-      <DesktopTop icon={<LayoutDashboard size={24} className="text-primary" aria-hidden />} title="Dashboard">
-        {device ? (
-          <>
-            <StatusChips model={model} desktop />
-            <UpdatedAgo model={model} />
-          </>
-        ) : null}
-      </DesktopTop>
+      {device ? (
+        <ShellExtras
+          phone={<StatusChips model={model} />}
+          desktop={
+            <>
+              <StatusChips model={model} desktop />
+              <UpdatedAgo model={model} />
+            </>
+          }
+        />
+      ) : null}
       <PageBody>{content}</PageBody>
     </>
   );

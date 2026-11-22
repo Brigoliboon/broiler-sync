@@ -1,5 +1,5 @@
-import { Download, FileSpreadsheet } from "lucide-react";
-import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { FileSpreadsheet } from "lucide-react";
+import { PageBody } from "@/components/app/app-frame";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { MAX_EXPORT_DAYS, parseExportQuery, type ExportCompartment } from "@/lib/csv";
 import { getAppContext } from "@/lib/db/app-context";
@@ -53,10 +53,7 @@ export default async function ExportPage({ searchParams }: PageProps<"/export">)
   }
 
   return (
-    <>
-      <PhoneBar ctx={ctx} />
-      <DesktopTop icon={<Download size={24} className="text-primary" aria-hidden />} title="Export" />
-      <PageBody className="lg:items-center">
+    <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <div className="flex items-center gap-3">
             <span className="flex size-11 flex-none items-center justify-center rounded-sm bg-success-soft">
@@ -88,7 +85,6 @@ export default async function ExportPage({ searchParams }: PageProps<"/export">)
             </>
           )}
         </div>
-      </PageBody>
-    </>
+    </PageBody>
   );
 }

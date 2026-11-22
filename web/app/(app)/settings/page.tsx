@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { type ReactNode } from "react";
-import { Bird, Bot, Calendar, ChevronLeft, Hand, Info, Save, Settings, Target } from "lucide-react";
-import { DesktopTop, PageBody } from "@/components/app/app-frame";
+import { Bird, Bot, Calendar, Hand, Info, Save, Target } from "lucide-react";
+import { PageBody } from "@/components/app/app-frame";
 import { Card, EmptyNote, ErrorNote, cx } from "@/components/app/ui";
 import { DEFAULT_LIMITS, humidityLimits, setpointForAge, windLimit } from "@/lib/climate";
 import { listAgeThresholds, type AgeThreshold } from "@/lib/db/age-thresholds";
@@ -138,21 +137,8 @@ export default async function SettingsPage() {
     );
 
   return (
-    <>
-      <header className="flex items-center gap-2 border-b border-border bg-surface p-4 lg:hidden">
-        <Link
-          href="/dashboard"
-          aria-label="Back to dashboard"
-          className="interactive -ml-3 flex size-11 items-center justify-center rounded-sm hover:bg-[#F1F5F9]"
-        >
-          <ChevronLeft size={24} aria-hidden />
-        </Link>
-        <h1 className="text-xl leading-[1.3] font-bold">Farm settings</h1>
-      </header>
-      <DesktopTop icon={<Settings size={24} className="text-primary" aria-hidden />} title="Farm settings" />
-      <PageBody className="lg:items-center">
-        <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">{content}</div>
-      </PageBody>
-    </>
+    <PageBody className="lg:items-center">
+      <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">{content}</div>
+    </PageBody>
   );
 }
