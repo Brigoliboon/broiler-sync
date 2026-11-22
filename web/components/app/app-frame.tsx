@@ -273,12 +273,14 @@ export function PhoneBar({ ctx, children }: { ctx: AppContext; children?: ReactN
   );
 }
 
-/** Desktop top bar: page title with icon, optional right-hand content. */
-export function DesktopTop({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children?: ReactNode }) {
+/** Desktop top bar: page title with icon, optional right-hand content.
+ *  `icon` must be a rendered node — Lucide components cannot be passed
+ *  as props from Server Components into this Client Component. */
+export function DesktopTop({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
   return (
     <header className="hidden h-[72px] flex-none items-center justify-between border-b border-border bg-surface px-8 lg:flex">
       <h1 className="flex items-center gap-2 text-2xl leading-[1.3] font-bold">
-        <Icon size={24} className="text-primary" aria-hidden />
+        {icon}
         {title}
       </h1>
       {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}

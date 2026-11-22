@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Bell, ChartLine, ChevronLeft, Download, LayoutDashboard, Settings, Users, type LucideIcon } from "lucide-react";
+import { Bell, ChartLine, ChevronLeft, Download, LayoutDashboard, Settings, Users } from "lucide-react";
 import { Card, Chip, cx } from "./ui";
 import { PageBody } from "./app-frame";
 
@@ -37,11 +37,11 @@ export function PhoneBarSkeleton() {
 }
 
 /** Desktop toolbar chrome: the page icon stays, the title is a placeholder. */
-export function DesktopTitleSkeleton({ icon: Icon, children }: { icon: LucideIcon; children?: ReactNode }) {
+export function DesktopTitleSkeleton({ icon, children }: { icon: ReactNode; children?: ReactNode }) {
   return (
     <header className="hidden h-[72px] flex-none items-center justify-between border-b border-border bg-surface px-8 lg:flex">
       <div className="flex items-center gap-2">
-        <Icon size={24} className="text-primary" aria-hidden />
+        {icon}
         <Skeleton className="h-7 w-36" />
       </div>
       {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
@@ -96,7 +96,7 @@ export function DashboardSkeleton() {
   return (
     <ScreenStatus>
       <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={LayoutDashboard}>
+      <DesktopTitleSkeleton icon={<LayoutDashboard size={24} className="text-primary" aria-hidden />}>
         <Skeleton className="h-7 w-20 rounded-sm" />
         <Skeleton className="h-7 w-16 rounded-sm" />
         <Skeleton className="h-7 w-16 rounded-sm" />
@@ -157,7 +157,7 @@ export function HistorySkeleton() {
   return (
     <ScreenStatus>
       <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={ChartLine} />
+      <DesktopTitleSkeleton icon={<ChartLine size={24} className="text-primary" aria-hidden />} />
       <PageBody>
         <div className="flex flex-col gap-3 lg:hidden">
           <div className="flex rounded-md bg-border p-1">
@@ -264,7 +264,7 @@ export function AlertsSkeleton() {
   return (
     <ScreenStatus>
       <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={Bell} />
+      <DesktopTitleSkeleton icon={<Bell size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <Card className="flex items-center justify-between gap-3">
@@ -292,7 +292,7 @@ export function ExportSkeleton() {
   return (
     <ScreenStatus>
       <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={Download} />
+      <DesktopTitleSkeleton icon={<Download size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <div className="flex items-center gap-3">
@@ -344,7 +344,7 @@ export function SettingsSkeleton() {
         </Link>
         <Skeleton className="h-6 w-36" />
       </header>
-      <DesktopTitleSkeleton icon={Settings} />
+      <DesktopTitleSkeleton icon={<Settings size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <Card>
@@ -415,7 +415,7 @@ export function AdminSkeleton() {
         </div>
         <Skeleton className="mt-2 h-4 w-56" />
       </header>
-      <DesktopTitleSkeleton icon={Users}>
+      <DesktopTitleSkeleton icon={<Users size={24} className="text-primary" aria-hidden />}>
         <Chip tone="neutral">Admin</Chip>
       </DesktopTitleSkeleton>
       <PageBody className="lg:items-center">

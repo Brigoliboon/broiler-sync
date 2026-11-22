@@ -66,7 +66,7 @@ export default async function DashboardPage() {
     <>
       <AutoRefresh />
       <PhoneBar ctx={ctx}>{device ? <StatusChips model={model} /> : null}</PhoneBar>
-      <DesktopTop icon={LayoutDashboard} title="Dashboard">
+      <DesktopTop icon={<LayoutDashboard size={24} className="text-primary" aria-hidden />} title="Dashboard">
         {device ? (
           <>
             <StatusChips model={model} desktop />
