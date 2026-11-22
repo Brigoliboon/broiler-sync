@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { Bell, ChartLine, ChevronLeft, Download, LayoutDashboard, Settings, Users } from "lucide-react";
-import { Card, Chip, cx } from "./ui";
+import { Card, cx } from "./ui";
 import { PageBody } from "./app-frame";
 
 /** Pulse placeholder. Honours prefers-reduced-motion via `motion-safe`. */
@@ -15,37 +13,6 @@ function ScreenStatus({ children }: { children: ReactNode }) {
       <span className="sr-only">Loading</span>
       {children}
     </div>
-  );
-}
-
-/** Phone farm bar chrome: settings stay, the name is a placeholder. */
-export function PhoneBarSkeleton() {
-  return (
-    <header className="border-b border-border bg-surface p-4 lg:hidden">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-40" />
-        <Link
-          href="/settings"
-          aria-label="Farm settings"
-          className="interactive flex size-11 items-center justify-center rounded-sm text-subtle hover:bg-[#F1F5F9] hover:text-text"
-        >
-          <Settings size={22} aria-hidden />
-        </Link>
-      </div>
-    </header>
-  );
-}
-
-/** Desktop toolbar chrome: the page icon stays, the title is a placeholder. */
-export function DesktopTitleSkeleton({ icon, children }: { icon: ReactNode; children?: ReactNode }) {
-  return (
-    <header className="hidden h-[72px] flex-none items-center justify-between border-b border-border bg-surface px-8 lg:flex">
-      <div className="flex items-center gap-2">
-        {icon}
-        <Skeleton className="h-7 w-36" />
-      </div>
-      {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
-    </header>
   );
 }
 
@@ -95,13 +62,6 @@ function CompartmentCardSkeleton({ className }: { className?: string }) {
 export function DashboardSkeleton() {
   return (
     <ScreenStatus>
-      <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={<LayoutDashboard size={24} className="text-primary" aria-hidden />}>
-        <Skeleton className="h-7 w-20 rounded-sm" />
-        <Skeleton className="h-7 w-16 rounded-sm" />
-        <Skeleton className="h-7 w-16 rounded-sm" />
-        <Skeleton className="h-4 w-24 self-center" />
-      </DesktopTitleSkeleton>
       <PageBody>
         <div className="flex flex-col gap-3 lg:hidden">
           <div className="flex rounded-md bg-border p-1">
@@ -156,8 +116,6 @@ export function DashboardSkeleton() {
 export function HistorySkeleton() {
   return (
     <ScreenStatus>
-      <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={<ChartLine size={24} className="text-primary" aria-hidden />} />
       <PageBody>
         <div className="flex flex-col gap-3 lg:hidden">
           <div className="flex rounded-md bg-border p-1">
@@ -263,8 +221,6 @@ function AlertCardSkeleton() {
 export function AlertsSkeleton() {
   return (
     <ScreenStatus>
-      <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={<Bell size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <Card className="flex items-center justify-between gap-3">
@@ -291,8 +247,6 @@ export function AlertsSkeleton() {
 export function ExportSkeleton() {
   return (
     <ScreenStatus>
-      <PhoneBarSkeleton />
-      <DesktopTitleSkeleton icon={<Download size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <div className="flex items-center gap-3">
@@ -334,17 +288,6 @@ export function ExportSkeleton() {
 export function SettingsSkeleton() {
   return (
     <ScreenStatus>
-      <header className="flex items-center gap-2 border-b border-border bg-surface p-4 lg:hidden">
-        <Link
-          href="/dashboard"
-          aria-label="Back to dashboard"
-          className="interactive -ml-3 flex size-11 items-center justify-center rounded-sm hover:bg-[#F1F5F9]"
-        >
-          <ChevronLeft size={24} aria-hidden />
-        </Link>
-        <Skeleton className="h-6 w-36" />
-      </header>
-      <DesktopTitleSkeleton icon={<Settings size={24} className="text-primary" aria-hidden />} />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <Card>
@@ -405,19 +348,6 @@ function OwnerCardSkeleton() {
 export function AdminSkeleton() {
   return (
     <ScreenStatus>
-      <header className="border-b border-border bg-surface p-4 lg:hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users size={22} className="text-primary" aria-hidden />
-            <Skeleton className="h-6 w-24" />
-          </div>
-          <Chip tone="neutral">Admin</Chip>
-        </div>
-        <Skeleton className="mt-2 h-4 w-56" />
-      </header>
-      <DesktopTitleSkeleton icon={<Users size={24} className="text-primary" aria-hidden />}>
-        <Chip tone="neutral">Admin</Chip>
-      </DesktopTitleSkeleton>
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[960px] lg:gap-4">
           <Skeleton className="hidden h-4 w-64 lg:block" />
@@ -452,54 +382,6 @@ export function AdminSkeleton() {
         </div>
       </PageBody>
     </ScreenStatus>
-  );
-}
-
-/** First-load placeholder for the shared app shell (sidebar + bottom nav). */
-export function ShellSkeleton({ children }: { children?: ReactNode }) {
-  return (
-    <div className="flex min-h-dvh w-full flex-1 bg-bg text-text">
-      <aside className="sticky top-0 hidden h-dvh w-[248px] flex-none flex-col gap-4 border-r border-border bg-surface px-4 py-5 lg:flex">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-8 rounded-sm" />
-          <Skeleton className="h-5 w-28" />
-        </div>
-        <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-          <Skeleton className="size-8 rounded-sm" />
-          <div className="min-w-0 flex-1">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="mt-1 h-3 w-20" />
-          </div>
-        </div>
-        <nav aria-hidden className="flex flex-col gap-1">
-          {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className="flex h-11 items-center gap-3 rounded-sm px-3">
-              <Skeleton className="size-5 rounded-sm" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          ))}
-        </nav>
-        <div className="mt-auto flex items-center gap-2 border-t border-border pt-4">
-          <Skeleton className="size-9 rounded-full" />
-          <div className="min-w-0 flex-1">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="mt-1 h-3 w-14" />
-          </div>
-        </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-      <nav
-        aria-hidden
-        className="fixed inset-x-0 bottom-0 z-20 flex h-[calc(72px+env(safe-area-inset-bottom))] items-start justify-around border-t border-border bg-surface pt-3 pb-[env(safe-area-inset-bottom)] lg:hidden"
-      >
-        {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="flex min-h-12 min-w-16 flex-col items-center justify-center gap-1">
-            <Skeleton className="size-6 rounded-sm" />
-            <Skeleton className="h-3 w-10" />
-          </div>
-        ))}
-      </nav>
-    </div>
   );
 }
 

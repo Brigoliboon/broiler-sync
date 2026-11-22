@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   BatteryLow,
-  Bell,
   Droplet,
   Thermometer,
   TriangleAlert,
@@ -9,7 +8,7 @@ import {
   WifiOff,
   type LucideIcon,
 } from "lucide-react";
-import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { PageBody } from "@/components/app/app-frame";
 import { Card, EmptyNote, ErrorNote, IconBox, Tag, cx } from "@/components/app/ui";
 import { feedItem, type FeedItem } from "@/lib/alert-feed";
 import { DEFAULT_LIMITS } from "@/lib/climate";
@@ -159,16 +158,12 @@ export default async function AlertsPage({ searchParams }: PageProps<"/alerts">)
     );
 
   return (
-    <>
-      <PhoneBar ctx={ctx} />
-      <DesktopTop icon={<Bell size={24} className="text-primary" aria-hidden />} title="Alerts" />
-      <PageBody className="lg:items-center">
-        <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
-          {ctx.isAdmin ? null : <PushToggle publicKey={vapidPublicKey()} />}
-          {device ? <Tabs tab={tab} activeCount={active.length} /> : null}
-          {list}
-        </div>
-      </PageBody>
-    </>
+    <PageBody className="lg:items-center">
+      <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
+        {ctx.isAdmin ? null : <PushToggle publicKey={vapidPublicKey()} />}
+        {device ? <Tabs tab={tab} activeCount={active.length} /> : null}
+        {list}
+      </div>
+    </PageBody>
   );
 }
