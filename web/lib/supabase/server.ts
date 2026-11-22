@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { supabasePublishableKey, supabaseUrl } from "./env";
 
 /**
@@ -9,6 +10,10 @@ import { supabasePublishableKey, supabaseUrl } from "./env";
  * RLS still applies. Never cache this across requests.
  */
 export async function createUserClient() {
+  // @supabase/ssr reads Date.now() while loading the session. Opt into
+  // request-time rendering so Cache Components does not treat that as an
+  // unstable prerender value.
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient(supabaseUrl(), supabasePublishableKey(), {

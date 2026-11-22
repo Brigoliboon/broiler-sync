@@ -161,7 +161,7 @@ export default async function AlertsPage({ searchParams }: PageProps<"/alerts">)
   return (
     <>
       <PhoneBar ctx={ctx} />
-      <DesktopTop icon={Bell} title="Alerts" />
+      <DesktopTop icon={<Bell size={24} className="text-primary" aria-hidden />} title="Alerts" />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           {ctx.isAdmin ? null : <PushToggle publicKey={vapidPublicKey()} />}

@@ -36,7 +36,7 @@ export default async function AdminPage() {
         </div>
         <p className="text-sm text-muted">Create and manage farm owner accounts</p>
       </header>
-      <DesktopTop icon={Users} title="Owners">
+      <DesktopTop icon={<Users size={24} className="text-primary" aria-hidden />} title="Owners">
         <Chip tone="neutral">Admin</Chip>
       </DesktopTop>
       <PageBody className="lg:items-center">

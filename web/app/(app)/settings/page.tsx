@@ -149,7 +149,7 @@ export default async function SettingsPage() {
         </Link>
         <h1 className="text-xl leading-[1.3] font-bold">Farm settings</h1>
       </header>
-      <DesktopTop icon={Settings} title="Farm settings" />
+      <DesktopTop icon={<Settings size={24} className="text-primary" aria-hidden />} title="Farm settings" />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">{content}</div>
       </PageBody>

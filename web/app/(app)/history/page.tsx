@@ -45,7 +45,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/history"
   return (
     <>
       <PhoneBar ctx={ctx} />
-      <DesktopTop icon={ChartLine} title="History" />
+      <DesktopTop icon={<ChartLine size={24} className="text-primary" aria-hidden />} title="History" />
       <PageBody>{content}</PageBody>
     </>
   );

@@ -55,7 +55,7 @@ export default async function ExportPage({ searchParams }: PageProps<"/export">)
   return (
     <>
       <PhoneBar ctx={ctx} />
-      <DesktopTop icon={Download} title="Export" />
+      <DesktopTop icon={<Download size={24} className="text-primary" aria-hidden />} title="Export" />
       <PageBody className="lg:items-center">
         <div className="flex w-full flex-col gap-3 lg:max-w-[720px]">
           <div className="flex items-center gap-3">
