@@ -1,0 +1,3 @@
+
+# Local per-farm configs (real Wi-Fi, device keys). Copy over firmware/config.h before flashing; never commit.
+.farms/
