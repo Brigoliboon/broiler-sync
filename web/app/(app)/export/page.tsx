@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { Download, FileSpreadsheet } from "lucide-react";
-import { AppFrame, DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { MAX_EXPORT_DAYS, parseExportQuery, type ExportCompartment } from "@/lib/csv";
 import { getAppContext } from "@/lib/db/app-context";
@@ -19,7 +18,7 @@ function estimateText(count: number, compartments: number, startMs: number, endM
   return minutes ? `About ${rows} rows · one reading every ${minutes} min` : `About ${rows} rows`;
 }
 
-async function ExportBody({ searchParams }: { searchParams: PageProps<"/export">["searchParams"] }) {
+export default async function ExportPage({ searchParams }: PageProps<"/export">) {
   const [ctx, params] = await Promise.all([getAppContext(), searchParams]);
   const today = manilaDate(ctx.now);
   const flockStart = ctx.settings?.flock_start ?? null;
@@ -54,7 +53,7 @@ async function ExportBody({ searchParams }: { searchParams: PageProps<"/export">
   }
 
   return (
-    <AppFrame ctx={ctx} active="export">
+    <>
       <PhoneBar ctx={ctx} />
       <DesktopTop icon={Download} title="Export" />
       <PageBody className="lg:items-center">
@@ -90,18 +89,6 @@ async function ExportBody({ searchParams }: { searchParams: PageProps<"/export">
           )}
         </div>
       </PageBody>
-    </AppFrame>
-  );
-}
-
-function Fallback() {
-  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
-}
-
-export default function ExportPage({ searchParams }: PageProps<"/export">) {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <ExportBody searchParams={searchParams} />
-    </Suspense>
+    </>
   );
 }

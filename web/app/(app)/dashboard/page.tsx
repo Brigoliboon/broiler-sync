@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { LayoutDashboard } from "lucide-react";
-import { AppFrame, DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
+import { DesktopTop, PageBody, PhoneBar } from "@/components/app/app-frame";
 import { EmptyNote, ErrorNote } from "@/components/app/ui";
 import { DEFAULT_LIMITS } from "@/lib/climate";
 import { getAppContext } from "@/lib/db/app-context";
@@ -9,11 +8,7 @@ import { getLatestReading, listReadings, type Reading } from "@/lib/db/readings"
 import { AutoRefresh } from "./auto-refresh";
 import { DesktopDashboard, PhoneDashboard, StatusChips, UpdatedAgo, type DashboardModel } from "./dashboard-view";
 
-function Fallback() {
-  return <div className="flex min-h-dvh flex-1 items-center justify-center bg-bg text-sm text-muted">Loading…</div>;
-}
-
-async function DashboardBody() {
+export default async function DashboardPage() {
   const ctx = await getAppContext();
   const now = ctx.now;
   const device = ctx.current?.device ?? null;
@@ -68,7 +63,7 @@ async function DashboardBody() {
     );
 
   return (
-    <AppFrame ctx={ctx} active="dashboard">
+    <>
       <AutoRefresh />
       <PhoneBar ctx={ctx}>{device ? <StatusChips model={model} /> : null}</PhoneBar>
       <DesktopTop icon={LayoutDashboard} title="Dashboard">
@@ -80,14 +75,6 @@ async function DashboardBody() {
         ) : null}
       </DesktopTop>
       <PageBody>{content}</PageBody>
-    </AppFrame>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <DashboardBody />
-    </Suspense>
+    </>
   );
 }
