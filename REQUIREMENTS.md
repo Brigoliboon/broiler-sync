@@ -31,13 +31,14 @@ Keep the experimental compartment at the right temperature for the birds' age au
 - 1602 I2C LCD for local live readings and status.
 - Supabase database and device endpoints.
 - Next.js website: dashboard, history, alerts, export, admin.
+- Installable web app (PWA) for Android, using the deployed website.
 - 12V power with battery backup and automatic switchover; protective enclosure.
 - Wiring and pin diagrams, a short operating and troubleshooting manual, sensor documentation for the paper's appendices, installation photos and a demo.
 
 **Out of scope**
 - SMS, Telegram or Messenger alerts (web push only).
 - Blynk or any third-party IoT dashboard.
-- A native mobile app.
+- A native mobile app, APK or Play Store listing; the installable PWA in FR-26 is used instead.
 - Mains (220V) wiring work, which needs a licensed electrician.
 - Livestock losses (see the service agreement).
 
@@ -78,6 +79,7 @@ Keep the experimental compartment at the right temperature for the birds' age au
   - temperature outside the setpoint band;
   - sensor fault, low battery (`BATT_LOW`, `BATT_CRIT`, `BATT_SENSOR`) and device offline. There is no separate mains-vs-battery sense line; those alerts are the power-loss notification.
 - FR-24 (optional, "only if possible"): change setpoints, flock start date and mode from the website.
+- FR-26: The website is installable as a PWA on Android: home-screen icon, standalone window opening on the dashboard, and web push alerts still work. No APK or Play Store listing. The service worker must not cache authenticated pages.
 
 ### 6.5 Local display (firmware)
 - FR-25: Show live status on a 1602 character LCD with an I2C backpack (RoHS-compliant). It shares the DS3231 I2C bus (D21/D22) and rotates three pages: compartment readings, fan/lamp/mode/battery/alert, and age/setpoint/SD/Wi-Fi. A missing LCD must not stop control, logging or sync.
@@ -118,6 +120,10 @@ Keep the experimental compartment at the right temperature for the birds' age au
 ## 12. Change log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-24
+- Added FR-26: installable PWA for Android, reusing the deployed website and its web push service worker. No APK or Play Store listing; authenticated pages must not be cached offline.
+- Added the PWA to the in-scope list and made the native-app exclusion explicit.
 
 ### 2026-11-20
 - Added FR-25: 1602 I2C LCD (RoHS) for local live readings and status, sharing the DS3231 I2C bus. Missing LCD must not affect control, logging or sync.
