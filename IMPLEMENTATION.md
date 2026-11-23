@@ -39,6 +39,9 @@ Deadline: **2026-11-29**.
   - [x] Alerts screen, push opt-in and a push on each new device alert `start`
   - [ ] VAPID keys set in Vercel (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
   - [x] Scheduled `DEVICE_OFFLINE` job (every 5 min via Supabase pg_cron + pg_net, 12 min timeout) and its push
+- [ ] Installable PWA for Android (FR-26): manifest with 192/512px icons, standalone launch on `/dashboard`, push-only service worker that never caches authenticated pages.
+  - [x] Manifest, icons and layout link added; lint, testcase, full suite and build pass; served manifest/icons verified locally
+  - [ ] Install prompt and push verified on a real Android device
 - [ ] Optional: setpoint and mode controls (FR-24)
   - [x] Farm settings screen, read-only: flock start date, mode and the day's setpoints (controls drawn but disabled)
   - [ ] Editing from the website: pending, Boon to implement
@@ -49,6 +52,14 @@ Deadline: **2026-11-29**.
   - [x] Admin pages via Server Actions (#17)
   - [x] Keep Supabase out of the browser bundle (#19)
   - [x] Docs for the new data-access rules (#20)
+
+### Checkpoint: PWA for Android (FR-26)
+- Status: implemented; on-device Android check pending.
+- Expected: Chrome on Android offers "Install app"; the home-screen icon opens the dashboard in a standalone window and web push alerts still arrive.
+- Success conditions: the root layout links a parseable manifest with `name`, `short_name`, `start_url`, `scope` and `display`; 192px, 512px and maskable PNG icons exist; the service worker stays push-only.
+- Validation rules: `start_url` `/dashboard` and `scope` `/` are same-origin; `display` is `standalone`; no `fetch` handler or Cache Storage use anywhere in `sw.js`; lint, tests and build pass.
+- Testcase: `web/lib/pwa.test.ts`.
+- Edge cases: an uninstalled visitor is redirected to `/login` on the same origin; no offline cache of server-rendered, cookie-authenticated pages; no APK or Play Store artifacts.
 
 ## M4 (Nov 22-23): Bench integration
 - [ ] Full loop test with simulated sensor faults, power loss and Wi-Fi loss (FR-5, FR-10, FR-15, NFR-1, NFR-2)
@@ -69,6 +80,10 @@ Deadline: **2026-11-29**.
 ## Progress log
 
 Newest first. Times are Asia/Manila (UTC+8).
+
+### 2026-11-24
+- Docs: added FR-26 (installable PWA for Android) to `REQUIREMENTS.md` and its M3 item here.
+- M3 UI: installable PWA (FR-26). Root layout links `/manifest.webmanifest` (standalone, start `/dashboard`, scope `/`) with 192px, 512px and maskable icons. `public/sw.js` stays push-only, so cookie-authenticated pages are never cached. `web/lib/pwa.test.ts` pins the manifest fields, icon files and the no-cache rule; lint, 85 tests and the production build pass, and the manifest/icons were checked over HTTP from `next start`. A real Android device check is still pending.
 
 ### 2026-11-22
 - M3: Scheduled DEVICE_OFFLINE job (FR-23). GET/POST `/api/cron/device-offline` is protected with `CRON_SECRET` (Bearer). The Vercel project is on Hobby, which only allows a daily cron, so the 5-minute schedule is Supabase pg_cron + pg_net (`supabase/cron_device_offline.sql`) calling that route. Timeout is 12 minutes after `last_seen_at` (`DEVICE_OFFLINE_MS`, overridable with `DEVICE_OFFLINE_AFTER_MS`). One `start` per outage; `touchDevice` already writes the `clear` on reconnect (no push for clear).

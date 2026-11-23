@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: "BroilerSync",
   description:
     "Broiler-house climate monitoring, control, alerts and history.",
+  applicationName: "BroilerSync",
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
